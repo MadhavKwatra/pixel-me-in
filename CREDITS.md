@@ -7,6 +7,7 @@
 | idb-keyval                                                                                            | Apache-2.0  | https://github.com/jakearchibald/idb-keyval |
 | Pixelify Sans font (`public/fonts/`)                                                                  | SIL OFL 1.1 | https://github.com/eifetx/Pixelify-Sans     |
 | Phaser AI skills (`.claude/skills/phaser-*`, copied from the phaser package)                          | MIT         | https://github.com/phaserjs/phaser          |
+| Brand icons (`src/ui/icons.ts`)                                                                       | CC0-1.0     | https://simpleicons.org                     |
 | vite-plugin-pwa / Workbox                                                                             | MIT         | https://vite-pwa-org.netlify.app            |
 
 All pixel art, icons and sound effects in this repo are made in code by the project and are covered by the project's MIT license.

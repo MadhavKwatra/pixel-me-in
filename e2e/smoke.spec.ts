@@ -128,7 +128,8 @@ test('detail pages load with header, footer and CSP', async ({ page }) => {
   ]) {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
-    await expect(page.locator('.site-footer')).toContainText('Madhav Kwatra');
+    await expect(page.locator('.site-footer')).toContainText('Madhav');
+    await expect(page.locator('.site-footer a[aria-label="LinkedIn"]')).toBeVisible();
     const csp = await page
       .locator('meta[http-equiv="Content-Security-Policy"]')
       .getAttribute('content');

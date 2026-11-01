@@ -1,6 +1,7 @@
 import { clearAllData } from '../../face/faceStore';
 import { getSettings, setSettings, type Settings } from '../../storage/local';
 import type { Screen } from '../app';
+import { feedbackHtml, wireFeedback } from '../feedback';
 import { onActions, render, toast } from '../dom';
 
 const TOGGLES: [keyof Settings, string, string][] = [
@@ -33,11 +34,20 @@ export const settingsScreen: Screen = (app, root) => {
         <h3>Your data</h3>
         <p class="note">Your face crop, character, scores and settings are stored only in this browser.</p>
         <button class="btn btn-red" data-action="delete">Delete my data</button>
+        <h3>More</h3>
+        <div class="row">
+          <a class="btn btn-ghost" href="./how-to-play.html">How to play</a>
+          <a class="btn btn-ghost" href="./privacy.html">Privacy</a>
+          <a class="btn btn-ghost" href="./about.html">About</a>
+        </div>
+        <h3>Feedback &amp; contact</h3>
+        ${feedbackHtml()}
         <button class="btn btn-ghost" data-action="back" autofocus>Back</button>
       </div>
     </div>`,
   );
 
+  wireFeedback(root);
   root.querySelectorAll<HTMLInputElement>('input[data-k]').forEach((input) =>
     input.addEventListener('change', () => {
       const k = input.dataset.k as keyof Settings;

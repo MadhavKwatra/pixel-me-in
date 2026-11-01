@@ -2,6 +2,18 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part A: pages, footer, feedback
+
+- Phone header: Play button + ☰ menu (Esc / outside click closes); current page highlighted.
+- Footer: "Made with ♥ by Madhav", icon links (Simple Icons, CC0), Feedback / Privacy; stays at the bottom of short pages.
+- Landing on phones: title → tablet → Play order; sticky "Play now" bar once the hero button scrolls away.
+- Title screen: link row removed, ✕ exit icon; Settings gets "More" (pages) and "Feedback & contact".
+- Feedback & contact block (`src/ui/feedback.ts`): message me (LinkedIn, X, Instagram, portfolio), share the game; feedback form and GitHub links appear once `FEEDBACK_URL` / `REPO_URL` are set in `src/creator.ts`.
+- Game over: "Enjoying it? Share the game" from the 3rd run.
+- Toasts: close button, always auto-hide.
+- `scripts/ui-check.mjs`: every page and screen at 360×740, 390×844, 412×915, 915×412 and 1280×800; warns about sideways overflow.
+- Phone testing: `npm run dev:phone` (HTTPS on the Wi-Fi address, port 5191).
+
 ## 2026-11-01 – Phaser skills for AI helpers
 
 - Copied Phaser's official agent skills (28 guides shipped in the phaser npm package, MIT) into `.claude/skills/phaser-*` with `npm run skills:phaser`. Prefixed with `phaser-` so generic names like "scenes" do not clash.

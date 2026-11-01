@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { icon, type IconName } from './src/ui/icons';
 
 /**
  * Content-Security-Policy, added to the built index.html only (Vite's dev
@@ -40,14 +41,19 @@ function cspPlugin(): Plugin {
   };
 }
 
-/** `<!-- include:name -->` in any page is replaced by partials/name.html (shared header/footer). */
+/**
+ * `<!-- include:name -->` in any page is replaced by partials/name.html (shared header/footer),
+ * then `<!-- icon:name -->` by an inline SVG icon from src/ui/icons.ts.
+ */
 function partialsPlugin(): Plugin {
   return {
     name: 'html-partials',
     transformIndexHtml(html) {
-      return html.replace(/<!-- include:([\w-]+) -->/g, (_m, name: string) =>
-        readFileSync(resolve(__dirname, 'partials', `${name}.html`), 'utf-8'),
-      );
+      return html
+        .replace(/<!-- include:([\w-]+) -->/g, (_m, name: string) =>
+          readFileSync(resolve(__dirname, 'partials', `${name}.html`), 'utf-8'),
+        )
+        .replace(/<!-- icon:([\w-]+) -->/g, (_m, name: string) => icon(name as IconName));
     },
   };
 }

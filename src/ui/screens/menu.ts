@@ -1,5 +1,4 @@
 import { GAME_NAME } from '../../config';
-import { CREATOR } from '../../creator';
 import { getSettings, getStats } from '../../storage/local';
 import { startMiniScene } from '../miniScene';
 import type { Screen } from '../app';
@@ -24,6 +23,7 @@ export const menuScreen: Screen = (app, root) => {
   render(
     root,
     `<div class="panel title-screen">
+      <button class="icon-btn exit-btn" data-action="exit" aria-label="Exit the game" title="Exit">✕</button>
       <h2 class="game-title">${GAME_NAME}</h2>
       <div class="title-scene"><canvas aria-label="Your character running"></canvas><div class="scan" aria-hidden="true"></div></div>
       <div class="stack">
@@ -41,11 +41,6 @@ export const menuScreen: Screen = (app, root) => {
         <div><dt>Runs</dt><dd>${stats.runs}</dd></div>
       </dl>
       ${app.debug ? '<p class="note center">Debug view is on</p>' : ''}
-      <p class="note center menu-links">
-        <a href="./privacy.html">Privacy</a> <a href="./about.html">About</a>
-        <a href="${CREATOR.portfolio}" target="_blank" rel="noopener">Made by ${CREATOR.name}</a>
-        <button class="linklike" data-action="exit">Exit game</button>
-      </p>
     </div>`,
   );
 

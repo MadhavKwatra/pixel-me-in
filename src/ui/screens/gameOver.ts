@@ -3,7 +3,9 @@ import { OUTFIT_LABELS } from '../../art/body';
 import type { GameOverData } from '../../game/events';
 import { getStats, recordRun } from '../../storage/local';
 import { isUnlocked, UNLOCK_RULES } from '../../storage/unlocks';
+import { FEEDBACK_URL } from '../../creator';
 import type { Screen } from '../app';
+import { wireFeedback } from '../feedback';
 import { isTouch } from '../device';
 import { formatNumber, onActions, render } from '../dom';
 import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
@@ -40,10 +42,12 @@ export const gameOverScreen: Screen = (app, root, arg) => {
           <button class="btn btn-ghost" data-action="menu">Menu</button>
         </div>
       </div>
+      ${stats.runs >= 3 ? `<p class="note thanks">Enjoying it? <button class="linklike" data-share-game>Share the game</button>${FEEDBACK_URL ? ` or <a href="${FEEDBACK_URL}" target="_blank" rel="noopener">send feedback</a>` : ''}.</p>` : ''}
       ${isTouch() ? '' : '<p class="note">Tip: press Space or Enter to run again.</p>'}
     </div>`,
   );
 
+  wireFeedback(root);
   const card = () => makeCard(app.base!, app.avatar!, d);
   onActions(root, {
     again: () => void app.play(),

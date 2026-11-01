@@ -7,9 +7,22 @@ import { getSettings } from './storage/local';
 import { $, onActions } from './ui/dom';
 import { showLoader } from './ui/loader';
 import { defaultCharacter, startMiniScene } from './ui/miniScene';
+import { setupNav } from './ui/nav';
 import { promptInstall, setupPwa } from './ui/pwa';
 
 setupPwa();
+setupNav();
+
+// Phones: a sticky "Play now" bar appears once the hero's Play button scrolls away.
+{
+  const bar = document.querySelector<HTMLElement>('.sticky-play');
+  const heroPlay = document.querySelector('.hero [data-action="play"]');
+  if (bar && heroPlay && 'IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => bar.classList.toggle('show', !e.isIntersecting)).observe(
+      heroPlay,
+    );
+  }
+}
 
 // The tablet in the hero shows a ready-made character running (no photo needed).
 {

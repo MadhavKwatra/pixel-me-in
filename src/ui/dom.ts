@@ -38,7 +38,10 @@ let toastTimer = 0;
 
 export function toast(message: string, action?: { label: string; run: () => void }, ms = 3500) {
   const t = $('#toast');
-  t.textContent = message;
+  t.textContent = '';
+  const msg = document.createElement('span');
+  msg.textContent = message;
+  t.append(msg);
   if (action) {
     const b = document.createElement('button');
     b.className = 'btn';
@@ -49,8 +52,14 @@ export function toast(message: string, action?: { label: string; run: () => void
     });
     t.append(b);
   }
+  const close = document.createElement('button');
+  close.className = 'icon-btn toast-close';
+  close.setAttribute('aria-label', 'Close');
+  close.textContent = '✕';
+  close.addEventListener('click', () => (t.textContent = ''));
+  t.append(close);
   window.clearTimeout(toastTimer);
-  if (!action) toastTimer = window.setTimeout(() => (t.textContent = ''), ms);
+  toastTimer = window.setTimeout(() => (t.textContent = ''), action ? Math.max(ms, 10000) : ms);
 }
 
 export function flash() {
