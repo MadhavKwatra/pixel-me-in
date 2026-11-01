@@ -13,6 +13,8 @@ export interface Settings {
   /** On-screen Jump/Slide buttons: auto = upright phones only. */
   touchButtons: 'auto' | 'always' | 'never';
   portraitTipShown: boolean;
+  /** Test switch while the owner compares the two robot designs. */
+  robotMode: 'stumble' | 'attacks';
 }
 
 export interface Stats {
@@ -52,6 +54,7 @@ export function getSettings(): Settings {
     tutorialDone: false,
     touchButtons: 'auto',
     portraitTipShown: false,
+    robotMode: 'stumble',
   });
 }
 

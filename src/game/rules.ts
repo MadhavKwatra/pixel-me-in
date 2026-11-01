@@ -124,3 +124,39 @@ export const POWER_SECONDS: Record<PowerId, number> = { shield: Infinity, magnet
 export function metres(px: number, pxPerMetre: number): number {
   return Math.floor(px / pxPerMetre);
 }
+
+// ---------------------------------------------------------------- robot
+
+/**
+ * Two designs to compare (Settings → Robot):
+ * - stumble: a crash trips you and the robot runs up right behind you for a
+ *   while; crash again while it is close = caught (Temple Run / Subway Surfers style).
+ * - attacks: one crash = game over; the robot only shows up for the Robot Rush.
+ */
+export type RobotMode = 'stumble' | 'attacks';
+
+/** How long the robot stays right behind you after a stumble. */
+export const DANGER_MS = 6000;
+
+export function crashOutcome(
+  mode: RobotMode,
+  now: number,
+  dangerUntil: number,
+): 'stumble' | 'caught' | 'over' {
+  if (mode === 'attacks') return 'over';
+  return now < dangerUntil ? 'caught' : 'stumble';
+}
+
+/** Robot Rush attacks (end of each zone). Warnings are long enough to react. */
+export const RUSH_ATTACK_EVERY_MS = 1800;
+export const LASER_WARN_MS = 800;
+export const LASER_FIRE_MS = 350;
+export const BOMB_FLIGHT_MS = 900;
+
+export type RobotAttack = 'laser' | 'bomb';
+
+export function pickAttack(rng: () => number, last: RobotAttack | null): RobotAttack {
+  // Never the same attack three times in a row feels fairer; simple: lean towards switching.
+  if (last && rng() < 0.65) return last === 'laser' ? 'bomb' : 'laser';
+  return rng() < 0.5 ? 'laser' : 'bomb';
+}

@@ -13,7 +13,11 @@ export const EVENTS = {
   input: 'pmi:input',
 } as const;
 
-export type HintKind = 'jump' | 'slide' | 'double' | 'power' | 'nice' | 'again' | 'done';
+export type HintKind =
+  'jump' | 'slide' | 'double' | 'power' | 'nice' | 'again' | 'done' | 'laser' | 'bomb';
+
+/** Robot state for the HUD: rush at the end of a zone, close behind after a stumble. */
+export type ChaseKind = 'rush' | 'close' | null;
 
 export interface HudData {
   metres: number;
@@ -36,4 +40,7 @@ export interface RunConfig {
   vibration: boolean;
   tutorial: boolean;
   debug: boolean;
+  robotMode: 'stumble' | 'attacks';
+  /** Debug only: start the run at this many metres (e.g. just before a Robot Rush). */
+  startAt?: number;
 }

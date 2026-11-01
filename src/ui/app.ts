@@ -16,7 +16,7 @@ import {
   startRun,
   stopRun,
 } from '../game/controller';
-import { EVENTS, type GameOverData } from '../game/events';
+import { EVENTS, type ChaseKind, type GameOverData } from '../game/events';
 import { getSettings, setSettings } from '../storage/local';
 import { enterGameMode, isPortrait, isTouch, leaveGameMode } from './device';
 import { playDigitizer } from './digitizer';
@@ -146,12 +146,20 @@ export class App {
       slowMode: settings.slowMode,
       reducedMotion: settings.reducedMotion,
       vibration: settings.vibration,
-      tutorial: !settings.tutorialDone,
+      tutorial: !settings.tutorialDone && !this.startAt(),
       debug: this.debug,
+      robotMode: settings.robotMode,
+      startAt: this.startAt(),
     });
   }
 
   private detachTouch: () => void = () => {};
+
+  /** Debug view only: `?debug&start=380` starts near the end of zone 1 (robot testing). */
+  private startAt(): number | undefined {
+    const n = Number(new URLSearchParams(location.search).get('start'));
+    return this.debug && n > 0 ? n : undefined;
+  }
 
   /** Upright phone: one friendly tip (once) – playing upright is fine. */
   private portraitTip() {
@@ -191,7 +199,7 @@ export class App {
 
     onGame(EVENTS.hud, (d: Parameters<Hud['update']>[0]) => this.hud.update(d));
     onGame(EVENTS.zone, (d: { index: number; name: string }) => this.hud.banner(d.name, d.index));
-    onGame(EVENTS.chase, (on: boolean) => this.hud.chase(on));
+    onGame(EVENTS.chase, (k: ChaseKind) => this.hud.chase(k));
     onGame(EVENTS.announce, (text: string) => this.hud.announce(text));
     onGame(EVENTS.hint, (h: Parameters<Hud['hint']>[0]) => {
       this.hud.hint(h);

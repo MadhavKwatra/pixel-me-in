@@ -420,6 +420,31 @@ export const SPRITES: Record<string, { w: number; h: number; draw: Painter }> = 
       }
     },
   },
+  bomb: {
+    w: 20,
+    h: 22,
+    draw: (ctx) => {
+      pixelDisc(ctx, '#14121c', 10, 13, 9);
+      pixelDisc(ctx, '#2d2d2d', 10, 13, 7);
+      rect(ctx, '#5c5c5c', 6, 9, 3, 3);
+      rect(ctx, '#8a6243', 9, 2, 2, 4);
+      rect(ctx, '#e8c547', 10, 0, 2, 2);
+      rect(ctx, '#f08a24', 11, 1, 2, 2);
+    },
+  },
+  mark: {
+    w: 34,
+    h: 10,
+    draw: (ctx) => {
+      for (let y = 0; y < 10; y++) {
+        const half = Math.round(17 * Math.sqrt(1 - ((y - 4.5) / 5) ** 2));
+        const inner = Math.round(12 * Math.sqrt(Math.max(0, 1 - ((y - 4.5) / 3) ** 2)));
+        ctx.fillStyle = 'rgba(216,75,75,0.85)';
+        ctx.fillRect(17 - half, y, half - inner, 1);
+        ctx.fillRect(17 + inner, y, half - inner, 1);
+      }
+    },
+  },
   speedline: { w: 28, h: 1, draw: (ctx) => rect(ctx, 'rgba(255,255,255,0.7)', 0, 0, 28, 1) },
   cloud: {
     w: 48,
@@ -432,33 +457,7 @@ export const SPRITES: Record<string, { w: number; h: number; draw: Painter }> = 
       rect(ctx, '#e3f1fb', 8, 16, 34, 2);
     },
   },
-  robot0: { w: 84, h: 104, draw: (ctx) => drawRobot(ctx, 0) },
-  robot1: { w: 84, h: 104, draw: (ctx) => drawRobot(ctx, 1) },
 };
-
-function drawRobot(ctx: CanvasRenderingContext2D, f: number) {
-  const step = f ? 4 : 0;
-  // legs
-  rect(ctx, '#5c5c5c', 18 + step, 74, 14, 26);
-  rect(ctx, '#5c5c5c', 52 - step, 74, 14, 26);
-  rect(ctx, '#2d2d2d', 14 + step, 98, 22, 6);
-  rect(ctx, '#2d2d2d', 48 - step, 98, 22, 6);
-  // body
-  rect(ctx, '#9a9fbb', 8, 30, 68, 46);
-  rect(ctx, '#6f7494', 8, 70, 68, 6);
-  rect(ctx, '#d84b4b', 30, 44, 24, 14);
-  rect(ctx, '#ff8a8a', 34, 48, 6, 4);
-  // arms
-  rect(ctx, '#6f7494', 0, 34, 8, 30 + step);
-  rect(ctx, '#6f7494', 76, 34, 8, 34 - step);
-  // head
-  rect(ctx, '#9a9fbb', 20, 4, 44, 28);
-  rect(ctx, '#111111', 26, 12, 32, 10);
-  rect(ctx, f ? '#ff4d4d' : '#e8c547', 30 + step * 2, 14, 8, 6);
-  rect(ctx, f ? '#ff4d4d' : '#e8c547', 46 + step * 2, 14, 8, 6);
-  rect(ctx, '#5c5c5c', 40, 0, 4, 6);
-  rect(ctx, '#d84b4b', 38, 0, 8, 2);
-}
 
 export const SKY_SIZE = { w: VIEW_W, h: VIEW_H };
 export const LAYER_SIZE = { w: LAYER_W, h: 180 };

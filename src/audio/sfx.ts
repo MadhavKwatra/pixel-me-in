@@ -83,5 +83,16 @@ export const sfx = {
     tone(784, 0.1, { vol: 0.07 });
     tone(1047, 0.18, { vol: 0.07, delay: 0.1 });
   },
+  warn: () => [0, 0.12, 0.24].forEach((d) => tone(880 + d * 900, 0.08, { vol: 0.06, delay: d })),
+  laser: () => tone(1400, 0.35, { type: 'sawtooth', to: 300, vol: 0.06 }),
+  throwBomb: () => tone(500, 0.25, { type: 'triangle', to: 900, vol: 0.05 }),
+  boom: () => {
+    noise(0.35, 0.18);
+    tone(120, 0.3, { type: 'square', to: 40, vol: 0.07 });
+  },
+  stumble: () => {
+    noise(0.12, 0.12);
+    tone(330, 0.2, { type: 'square', to: 160, vol: 0.06 });
+  },
   dissolve: () => tone(900, 0.5, { type: 'square', to: 120, vol: 0.05 }),
 };

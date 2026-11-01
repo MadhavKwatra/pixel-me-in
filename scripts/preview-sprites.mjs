@@ -33,6 +33,18 @@ await page.evaluate(async () => {
     document.body.append(c);
   }
 });
+await page.evaluate(async () => {
+  const robot = await import('/src/art/robot.ts');
+  const sheet = robot.drawRobotSheet();
+  const c = document.createElement('canvas');
+  c.width = sheet.width * 2;
+  c.height = sheet.height * 2;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(sheet, 0, 0, c.width, c.height);
+  c.style.cssText = 'display:block;margin:4px;image-rendering:pixelated';
+  document.body.append(c);
+});
 await page.screenshot({ path: 'test-results/sprites.png', fullPage: true });
 await browser.close();
 console.log('wrote test-results/sprites.png');

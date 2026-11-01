@@ -2,6 +2,13 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part C: the robot
+
+- New robot sprite (`src/art/robot.ts`, shared helpers in `src/art/pixelGrid.ts`): 8-frame stomp, swinging arms, shoulder pads, scanning eye, blinking antenna, pulsing chest light, hazard stripe; laser, throw and zapped poses.
+- Robot Rush (last 90 m of each zone): warned attacks instead of normal obstacles – laser (0.8 s blinking warning, slide under) and bomb (red ring where it lands, jump over). The robot is zapped away at the zone change.
+- Two designs to compare (Settings → Robot (test)): **Stumble** (default: first crash trips you, the robot runs up behind you for 6 s, a second crash = caught) and **Attacks only** (one crash ends the run). Rules in `rules.ts`, unit-tested.
+- Debug shortcut: `?debug&start=395` starts a run just before the first Robot Rush. `scripts/robot-check.mjs` screenshots it.
+
 ## 2026-11-02 – v0.3 part B: touch controls, full-screen portrait
 
 - Gestures (`src/ui/gestures.ts`, unit-tested): tap anywhere or swipe up = jump, swipe down (hold) = slide / fast fall. One hand is enough.

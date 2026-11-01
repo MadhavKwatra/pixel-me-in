@@ -48,6 +48,11 @@ A wooden crate appears in every zone. After Space, the zones loop ("lap 2").
 
 Jump → slide → double jump → grab a power-up. Time slows to 25 % near each lesson until the player does the move. Replay it from How to play.
 
+## The robot
+
+- **Robot Rush** (last 90 m of each zone): instead of normal obstacles the robot attacks, always with a warning – laser (blinking line for 0.8 s → slide) or bomb (red ring where it lands → jump). It gets zapped away when the zone changes.
+- **Stumble design** (test default): first crash = stumble + slowdown, the robot stays right behind you for 6 s; crash again in that time = caught. **Attacks-only design**: one crash = game over. Owner picks one after playing (Settings → Robot (test)).
+
 ## Power-ups
 
 | Power   | Effect                                                                   |

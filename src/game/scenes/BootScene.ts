@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { drawRobotSheet, ROBOT_FRAMES, ROBOT_W, ROBOT_H } from '../../art/robot';
 import { GROUND_TILE, LAYER_SIZE, paint, SKY_SIZE, SPRITES, ZONES } from '../../art/world';
 
 /**
@@ -24,6 +25,10 @@ export class BootScene extends Phaser.Scene {
     }
     for (const [key, s] of Object.entries(SPRITES)) add(key, paint(s.w, s.h, s.draw));
     add('bubble', paint(76, 92, bubble));
+    if (!this.textures.exists('robot')) {
+      const robot = this.textures.addCanvas('robot', drawRobotSheet());
+      ROBOT_FRAMES.forEach((f, i) => robot?.add(f, 0, i * ROBOT_W, 0, ROBOT_W, ROBOT_H));
+    }
     this.game.events.emit('pmi:ready');
   }
 }

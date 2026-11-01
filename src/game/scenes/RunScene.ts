@@ -9,7 +9,16 @@ import { dissolve, popText, puff } from '../effects';
 import { EVENTS, type HintKind, type RunConfig } from '../events';
 import { Player } from '../Player';
 import { computeView, playerX, type View } from '../view';
+import { ROBOT_WALK, type RobotFrame } from '../../art/robot';
 import {
+  BOMB_FLIGHT_MS,
+  crashOutcome,
+  DANGER_MS,
+  LASER_FIRE_MS,
+  LASER_WARN_MS,
+  pickAttack,
+  RUSH_ATTACK_EVERY_MS,
+  type RobotAttack,
   FIRST_POWER_M,
   isBossChase,
   makeRng,
@@ -79,6 +88,20 @@ export class RunScene extends Phaser.Scene {
   private started = false;
   private lastHudAt = 0;
   private stompAt = 0;
+  // Robot
+  private dangerUntil = 0;
+  private stumbleUntil = 0;
+  private nextAttackAt = 0;
+  private lastAttack: RobotAttack | null = null;
+  private robotPoseUntil = 0;
+  private robotPose: RobotFrame = 'walk0';
+  private laser: {
+    warn: Phaser.GameObjects.Graphics;
+    beam?: Phaser.GameObjects.Rectangle;
+    fireAt: number;
+    endAt: number;
+  } | null = null;
+  private marks: { mark: Phaser.GameObjects.Image; landAt: number }[] = [];
   private dustAt = 0;
   private lineAt = 0;
 
@@ -98,15 +121,22 @@ export class RunScene extends Phaser.Scene {
   create(cfg: RunConfig) {
     this.cfg = cfg;
     this.rng = makeRng(cfg.seed);
-    this.distancePx = 0;
+    this.distancePx = (cfg.startAt ?? 0) * PX_PER_METRE;
     this.speed = 0;
     this.gearCount = 0;
-    this.nextSpawnAt = 520;
+    this.nextSpawnAt = this.distancePx + 520;
     this.zoneIdx = 0;
     this.chasing = false;
     this.power = null;
     this.lastPowerM = FIRST_POWER_M - POWER_PITY_M;
     this.invulnUntil = 0;
+    this.dangerUntil = 0;
+    this.stumbleUntil = 0;
+    this.nextAttackAt = 0;
+    this.lastAttack = null;
+    this.robotPoseUntil = 0;
+    this.laser = null;
+    this.marks = [];
     this.over = false;
     this.started = false;
     this.lessons = cfg.tutorial ? [...TUTORIAL] : [];
@@ -156,7 +186,7 @@ export class RunScene extends Phaser.Scene {
     );
 
     this.robot = this.add
-      .image(-140, GROUND_Y + 2, 'robot0')
+      .image(-200, GROUND_Y + 2, 'robot', 'walk0')
       .setOrigin(0.5, 1)
       .setDepth(8);
     this.shield = this.add.image(0, 0, 'bubble').setDepth(12).setVisible(false);
@@ -323,7 +353,12 @@ export class RunScene extends Phaser.Scene {
     if (!this.started) this.speed = 0;
     else if (this.over) this.speed = Math.max(0, this.speed - 900 * dt);
     // Portrait shows less road ahead, so it runs a little slower.
-    else this.speed = speedAt(m, this.cfg.slowMode) * (this.view.portrait ? 0.9 : 1);
+    else {
+      // A stumble slows you down for a moment (the robot catches up).
+      const trip =
+        time < this.stumbleUntil ? 0.6 + 0.4 * (1 - (this.stumbleUntil - time) / 900) : 1;
+      this.speed = speedAt(m, this.cfg.slowMode) * (this.view.portrait ? 0.9 : 1) * trip;
+    }
     this.distancePx += this.speed * dt;
 
     this.layers.far.tilePositionX += this.speed * dt * 0.12;
@@ -436,7 +471,7 @@ export class RunScene extends Phaser.Scene {
       this.spawnLesson(this.lessonIndex);
       this.lessonIndex++;
       gapScale = 2;
-    } else if (this.power === 'jetpack') {
+    } else if (this.power === 'jetpack' || this.chasing) {
       this.spawnPattern('gearsLine');
     } else {
       const p = pickPattern(this.rng, m, this.power !== null, this.lastPowerM);
@@ -598,16 +633,49 @@ export class RunScene extends Phaser.Scene {
       return;
     }
 
+    o.disableBody(true, true);
+    if (o.texture.key === 'bomb') this.explode(o.x, o.y);
+    this.crash(o.x, o.y);
+  }
+
+  /** Something hit the player (obstacle, bomb or laser). */
+  private crash(x: number, y: number) {
+    if (this.over || this.time.now < this.invulnUntil) return;
     if (this.power === 'shield') {
       this.power = null;
-      o.disableBody(true, true);
       this.invulnUntil = this.time.now + 700;
       sfx.shieldBreak();
-      this.burst(o.x, o.y, 0x78dcff);
+      this.burst(x, y, 0x78dcff);
       return;
     }
-
+    const outcome = crashOutcome(this.cfg.robotMode, this.time.now, this.dangerUntil);
+    if (outcome === 'stumble') {
+      this.stumble();
+      return;
+    }
+    if (outcome === 'caught') {
+      // The robot grabs you.
+      this.tweens.killTweensOf(this.robot);
+      this.robot.x = this.player.box.x - 40;
+      this.robot.setFrame('throw');
+    }
     this.gameOver();
+  }
+
+  private stumble() {
+    const now = this.time.now;
+    sfx.stumble();
+    if (this.cfg.vibration) navigator.vibrate?.(80);
+    if (!this.cfg.reducedMotion) this.cameras.main.shake(140, 0.006);
+    this.player.stumble(now);
+    this.stumbleUntil = now + 900;
+    this.invulnUntil = now + 1200;
+    this.dangerUntil = now + DANGER_MS;
+    this.emit(EVENTS.chase, 'close');
+    this.time.delayedCall(DANGER_MS, () => {
+      if (!this.over && this.time.now >= this.dangerUntil)
+        this.emit(EVENTS.chase, this.chasing ? 'rush' : null);
+    });
   }
 
   private gameOver() {
@@ -623,7 +691,7 @@ export class RunScene extends Phaser.Scene {
     if (!this.cfg.reducedMotion) this.cameras.main.shake(200, 0.01);
     this.time.delayedCall(180, () => {
       sfx.dissolve();
-      this.robot.setVisible(false);
+      this.clearAttacks();
       dissolve(this, [this.player.bodySprite, this.player.head], this.cfg.reducedMotion, () => {
         this.emit(EVENTS.over, {
           metres: metres(this.distancePx, PX_PER_METRE),
@@ -753,6 +821,7 @@ export class RunScene extends Phaser.Scene {
     this.layers = next;
     // No clouds in space.
     this.tweens.add({ targets: this.clouds, alpha: z.id === 'space' ? 0 : 0.9, duration: 500 });
+    this.zapRobot();
     sfx.zap();
     playZoneMusic(index);
     if (!this.cfg.reducedMotion) this.cameras.main.flash(250, 255, 255, 255);
@@ -760,29 +829,205 @@ export class RunScene extends Phaser.Scene {
     this.emit(EVENTS.zone, { index, name: lap ? `${z.name} (lap ${lap + 1})` : z.name });
   }
 
+  /** Robot Rush at the end of each zone, plus the robot following you after a stumble. */
   private updateChase(chase: boolean, time: number) {
     if (chase !== this.chasing) {
       this.chasing = chase;
-      this.tweens.killTweensOf(this.robot);
-      this.tweens.add({
-        targets: this.robot,
-        x: chase ? 46 : -140,
-        duration: chase ? 900 : 600,
-        ease: 'Sine.out',
-      });
-      this.emit(EVENTS.chase, chase);
+      this.nextAttackAt = time + 1200;
+      this.emit(EVENTS.chase, chase ? 'rush' : time < this.dangerUntil ? 'close' : null);
     }
-    if (this.robot.x > -100) {
-      this.robot.setTexture(Math.floor(time / 220) % 2 ? 'robot1' : 'robot0');
-      if (chase && time > this.stompAt) {
-        this.stompAt = time + 660;
+    const danger = time < this.dangerUntil;
+    const v = this.view;
+    // Where the robot wants to be: right behind you (danger), at the left edge (rush), or gone.
+    const target = danger ? this.player.box.x - 78 : chase ? v.left + 60 : v.left - 200;
+    this.robot.x += (target - this.robot.x) * 0.06;
+    this.robot.setVisible(this.robot.x > v.left - 120);
+
+    if (this.robot.visible) {
+      const pose =
+        time < this.robotPoseUntil
+          ? this.robotPose
+          : ROBOT_WALK[Math.floor(time / 110) % ROBOT_WALK.length];
+      this.robot.setFrame(pose);
+      if (time > this.stompAt) {
+        this.stompAt = time + 440;
         sfx.robot();
         if (!this.cfg.reducedMotion) {
-          this.cameras.main.shake(80, 0.003);
-          puff(this, this.robot.x, GROUND_Y, 4, 40);
+          this.cameras.main.shake(70, 0.0025);
+          puff(this, this.robot.x - 10, GROUND_Y, 3, 30);
         }
       }
     }
+    if (chase && time > this.nextAttackAt && !this.laser) {
+      this.nextAttackAt = time + RUSH_ATTACK_EVERY_MS * (this.cfg.slowMode ? 1.25 : 1);
+      const a = pickAttack(this.rng, this.lastAttack);
+      this.lastAttack = a;
+      if (a === 'laser') this.startLaser(time);
+      else this.throwBomb(time);
+    }
+    this.updateAttacks(time);
+  }
+
+  /** Laser: a blinking warning line at chest height, then the beam. Slide under it! */
+  private startLaser(time: number) {
+    this.robotPose = 'laser';
+    this.robotPoseUntil = time + LASER_WARN_MS + LASER_FIRE_MS;
+    const y = GROUND_Y - 56;
+    const warn = this.add.graphics().setDepth(24);
+    const v = this.view;
+    warn.fillStyle(0xff5a5a, 0.18);
+    warn.fillRect(v.left, y - 7, v.width, 14);
+    warn.lineStyle(3, 0xff5a5a, 1);
+    for (let x = v.left; x < v.left + v.width; x += 16) warn.lineBetween(x, y, x + 10, y);
+    warn.fillStyle(0xff5a5a, 1);
+    warn.fillRect(v.left + v.width - 26, y - 22, 6, 12);
+    warn.fillRect(v.left + v.width - 26, y - 7, 6, 4);
+    this.tweens.add({ targets: warn, alpha: 0.25, duration: 120, yoyo: true, repeat: -1 });
+    sfx.warn();
+    this.emit(EVENTS.hint, 'laser');
+    this.laser = {
+      warn,
+      fireAt: time + LASER_WARN_MS,
+      endAt: time + LASER_WARN_MS + LASER_FIRE_MS,
+    };
+  }
+
+  /** Bomb: a red ring marks where it lands, then it sits on the ground. Jump over it! */
+  private throwBomb(time: number) {
+    this.robotPose = 'throw';
+    this.robotPoseUntil = time + 350;
+    sfx.throwBomb();
+    const mark = this.add.image(this.player.box.x + 330, GROUND_Y + 1, 'mark').setDepth(4);
+    this.tweens.add({
+      targets: mark,
+      scale: { from: 1.3, to: 0.9 },
+      duration: 220,
+      yoyo: true,
+      repeat: -1,
+    });
+    this.marks.push({ mark, landAt: time + BOMB_FLIGHT_MS });
+    // The bomb flies in an arc from the robot to the mark.
+    const bomb = this.add.image(this.robot.x + 20, GROUND_Y - 80, 'bomb').setDepth(23);
+    this.tweens.add({
+      targets: bomb,
+      x: mark.x - this.speed * (BOMB_FLIGHT_MS / 1000) * 0.6,
+      duration: BOMB_FLIGHT_MS,
+      ease: 'Linear',
+    });
+    this.tweens.add({
+      targets: bomb,
+      y: GROUND_Y - 190,
+      duration: BOMB_FLIGHT_MS / 2,
+      ease: 'Quad.out',
+      yoyo: true,
+      onComplete: () => bomb.destroy(),
+    });
+    this.tweens.add({ targets: bomb, angle: 540, duration: BOMB_FLIGHT_MS });
+    this.emit(EVENTS.hint, 'bomb');
+  }
+
+  private updateAttacks(time: number) {
+    const dt = this.game.loop.delta / 1000;
+    // marks scroll with the world, then turn into a bomb on the ground
+    this.marks = this.marks.filter(({ mark, landAt }) => {
+      mark.x -= this.speed * dt * this.slow;
+      if (time < landAt) return true;
+      const b = this.addObstacle('bomb', mark.x, false, null);
+      this.tweens.add({
+        targets: b,
+        scale: { from: 1.15, to: 1 },
+        duration: 160,
+        yoyo: true,
+        repeat: -1,
+      });
+      sfx.land();
+      mark.destroy();
+      return false;
+    });
+    // bombs you jumped over go off behind you
+    for (const o of this.obstacles.getChildren() as ArcadeSprite[]) {
+      if (o.active && o.texture.key === 'bomb' && o.x < this.player.box.x - 50) {
+        o.disableBody(true, true);
+        this.explode(o.x, o.y);
+      }
+    }
+    const l = this.laser;
+    if (!l) return;
+    if (time >= l.fireAt && !l.beam) {
+      l.warn.destroy();
+      const v = this.view;
+      l.beam = this.add
+        .rectangle(v.left, GROUND_Y - 56, v.width, 12, 0xff5a5a)
+        .setOrigin(0, 0.5)
+        .setDepth(24);
+      this.add
+        .rectangle(v.left, GROUND_Y - 56, v.width, 4, 0xffd0d0)
+        .setOrigin(0, 0.5)
+        .setDepth(25)
+        .setName('beamCore');
+      sfx.laser();
+      if (!this.cfg.reducedMotion) this.cameras.main.shake(LASER_FIRE_MS, 0.003);
+    }
+    if (l.beam) {
+      // Hit if the player's hitbox crosses the beam band.
+      const b = this.player.body;
+      const top = GROUND_Y - 62;
+      const bottom = GROUND_Y - 50;
+      if (!this.player.flying && b.bottom > top && b.top < bottom)
+        this.crash(this.player.box.x, GROUND_Y - 56);
+    }
+    if (time >= l.endAt) this.clearLaser();
+  }
+
+  private clearLaser() {
+    if (!this.laser) return;
+    this.laser.warn.destroy();
+    this.laser.beam?.destroy();
+    this.children.getByName('beamCore')?.destroy();
+    this.laser = null;
+  }
+
+  private clearAttacks() {
+    this.clearLaser();
+    this.marks.forEach((m) => m.mark.destroy());
+    this.marks = [];
+  }
+
+  private explode(x: number, y: number) {
+    sfx.boom();
+    if (!this.cfg.reducedMotion) {
+      puff(this, x, y + 8, 8, 30, 0xf08a24);
+      puff(this, x, y, 5, 20, 0x5c5c5c);
+    }
+  }
+
+  /** At the end of a zone the digitizer beam zaps the robot away. */
+  private zapRobot() {
+    if (!this.robot.visible) return;
+    this.clearAttacks();
+    this.robot.setFrame('zapped');
+    this.robotPose = 'zapped';
+    this.robotPoseUntil = this.time.now + 400;
+    const beam = this.add
+      .rectangle(this.robot.x, GROUND_Y, 40, 400, 0x9cf3ff, 0.8)
+      .setOrigin(0.5, 1)
+      .setDepth(26);
+    this.tweens.add({
+      targets: beam,
+      scaleX: 0,
+      alpha: 0,
+      duration: 400,
+      onComplete: () => beam.destroy(),
+    });
+    this.tweens.add({
+      targets: this.robot,
+      alpha: 0,
+      duration: 380,
+      onComplete: () => {
+        this.robot.x = this.view.left - 220;
+        this.robot.setAlpha(1);
+      },
+    });
   }
 
   // ---------------------------------------------------------------- tutorial

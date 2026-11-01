@@ -3,7 +3,7 @@
  * teaching hints (HTML over the canvas). Touch devices see touch zones,
  * keyboards see keys – never both.
  */
-import type { HintKind, HudData } from '../game/events';
+import type { ChaseKind, HintKind, HudData } from '../game/events';
 import { hasGamepad, isTouch } from './device';
 import { formatNumber } from './dom';
 
@@ -89,18 +89,17 @@ export class Hud {
     this.say(el.textContent);
   }
 
-  chase(on: boolean) {
+  chase(kind: ChaseKind) {
     const holder = this.root.querySelector('[data-banners]');
     if (!holder) return;
     holder.querySelector('.chase')?.remove();
-    if (on) {
-      const el = document.createElement('div');
-      el.className = 'banner chase';
-      el.textContent = 'Robot chase!';
-      holder.append(el);
-      setTimeout(() => el.remove(), 2400);
-      this.say('Robot chase!');
-    }
+    if (!kind) return;
+    const el = document.createElement('div');
+    el.className = 'banner chase';
+    el.textContent = kind === 'rush' ? 'Robot rush!' : "It's right behind you!";
+    holder.append(el);
+    setTimeout(() => el.remove(), 2400);
+    this.say(el.textContent);
   }
 
   /** Teaching hint. On touch screens the matching half of the screen glows. */
@@ -116,7 +115,9 @@ export class Hud {
     el.innerHTML = hintHtml(kind);
     this.root.append(el);
     this.say(el.textContent ?? '');
-    if (kind === 'done' || kind === 'again' || kind === 'nice') setTimeout(() => el.remove(), 1600);
+    if (kind !== 'jump' && kind !== 'slide' && kind !== 'double' && kind !== 'power') {
+      setTimeout(() => el.remove(), 1600);
+    }
   }
 
   /** Screen readers hear the important moments. */
@@ -170,6 +171,10 @@ function hintHtml(kind: HintKind): string {
       return 'Oops! Try the next one.';
     case 'done':
       return "You're ready. Run!";
+    case 'laser':
+      return '⚠ Laser! <b>Slide</b> under it!';
+    case 'bomb':
+      return '⚠ Bomb! <b>Jump</b> over it!';
     default:
       return '';
   }

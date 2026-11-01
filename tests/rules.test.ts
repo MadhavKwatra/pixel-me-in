@@ -72,3 +72,25 @@ describe('power-up schedule', () => {
     }
   });
 });
+
+describe('robot', () => {
+  it('stumble mode: first crash stumbles, a second one while close is caught', async () => {
+    const { crashOutcome, DANGER_MS } = await import('../src/game/rules');
+    expect(crashOutcome('stumble', 1000, 0)).toBe('stumble');
+    expect(crashOutcome('stumble', 2000, 1000 + DANGER_MS)).toBe('caught');
+    expect(crashOutcome('stumble', 1000 + DANGER_MS + 1, 1000 + DANGER_MS)).toBe('stumble');
+  });
+
+  it('attacks mode: any crash ends the run', async () => {
+    const { crashOutcome } = await import('../src/game/rules');
+    expect(crashOutcome('attacks', 1000, 0)).toBe('over');
+  });
+
+  it('attack warnings give time to react', async () => {
+    const { LASER_WARN_MS, BOMB_FLIGHT_MS, RUSH_ATTACK_EVERY_MS } =
+      await import('../src/game/rules');
+    expect(LASER_WARN_MS).toBeGreaterThanOrEqual(700);
+    expect(BOMB_FLIGHT_MS).toBeGreaterThanOrEqual(700);
+    expect(RUSH_ATTACK_EVERY_MS).toBeGreaterThan(LASER_WARN_MS + 500);
+  });
+});

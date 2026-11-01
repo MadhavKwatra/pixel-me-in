@@ -229,6 +229,7 @@ export class Player {
 
     let frame: BodyFrame;
     if (this.frozen) frame = 'idle';
+    else if (time < this.stumbleUntil) frame = 'hurt';
     else if (this.sliding) frame = 'slide';
     else if (this.flying) frame = 'jump';
     else if (!this.onGround) frame = this.body.velocity.y < 60 ? 'jump' : 'fall';
@@ -249,6 +250,20 @@ export class Player {
       rot += Phaser.Math.Clamp(this.body.velocity.y / 4000, -0.12, 0.12);
     }
     this.head.setRotation(rot);
+  }
+
+  private stumbleUntil = 0;
+
+  /** Trip: a short hurt pose and a head wobble, then keep running. */
+  stumble(now: number) {
+    this.stumbleUntil = now + 300;
+    if (this.sliding) this.endSlide(true);
+    this.scene.tweens.add({
+      targets: this.head,
+      angle: { from: -18, to: 0 },
+      duration: 380,
+      ease: 'Back.out',
+    });
   }
 
   /** Stop and show the hurt pose (the scene then breaks the character into pixels). */

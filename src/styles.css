@@ -630,7 +630,7 @@ input[type='range'] {
 
 .chase {
   color: #ff6b6b;
-  top: 34%;
+  top: 15%;
   animation: blink 0.5s steps(2) infinite;
 }
 
