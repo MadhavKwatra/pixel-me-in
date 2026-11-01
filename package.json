@@ -9,6 +9,7 @@
   "scripts": {
     "postinstall": "node scripts/copy-mediapipe.mjs",
     "dev": "vite",
+    "dev:phone": "vite --host --mode phone",
     "build": "tsc --noEmit && tsc -p tsconfig.node.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -28,6 +29,7 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "~1.63.0",
     "@types/node": "^24.19.2",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
     "prettier": "^3.9.10",

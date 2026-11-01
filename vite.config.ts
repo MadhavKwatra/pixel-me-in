@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -53,7 +54,9 @@ function partialsPlugin(): Plugin {
 
 const PAGES = ['index', 'how-to-play', 'privacy', 'about'];
 
-export default defineConfig({
+// `npm run dev:phone` uses mode "phone": HTTPS (self-signed) + listen on the Wi-Fi address,
+// so a phone on the same network can test everything, including the camera.
+export default defineConfig(({ mode }) => ({
   // Relative base so the build works on GitHub Pages sub-paths and inside an iframe.
   base: './',
   build: {
@@ -65,9 +68,10 @@ export default defineConfig({
   },
   // Own ports (not Vite's default 5173/4173): a service worker from another
   // local project on the default port would otherwise take over the page.
-  server: { port: 5190, strictPort: true },
+  server: { port: mode === 'phone' ? 5191 : 5190, strictPort: true },
   preview: { port: 4190, strictPort: true },
   plugins: [
+    ...(mode === 'phone' ? [basicSsl()] : []),
     partialsPlugin(),
     cspPlugin(),
     VitePWA({
@@ -113,4 +117,4 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     environment: 'node',
   },
-});
+}));

@@ -40,6 +40,14 @@ Dev review tools (need `npm run dev` running; output in `test-results/`): `node 
 
 The camera needs HTTPS or `localhost`.
 
+### Test on your phone (same Wi-Fi)
+
+```bash
+npm run dev:phone   # https://<your-PC-IP>:5191 (self-signed HTTPS, so the camera works)
+```
+
+Open the "Network" link on your phone. The first time, the browser warns "not private" (self-signed certificate): choose Advanced → Proceed. Windows may ask to allow Node.js on private networks. Installing the app (PWA) needs a real certificate, so test that after deploying.
+
 ## Tech
 
 [Phaser 4](https://phaser.io) (game engine) · TypeScript · [Vite](https://vite.dev) · [MediaPipe Face Landmarker + Image Segmenter](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) (self-hosted) · [idb-keyval](https://github.com/jakearchibald/idb-keyval) · [vite-plugin-pwa](https://vite-pwa-org.netlify.app/)
