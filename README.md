@@ -23,7 +23,7 @@ Needs Node.js 20+.
 
 ```bash
 npm install        # also copies the MediaPipe runtime into public/mediapipe/wasm
-npm run dev        # http://localhost:5173
+npm run dev        # http://localhost:5190
 ```
 
 | Command           | What it does                                      |

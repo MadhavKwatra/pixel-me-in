@@ -7,15 +7,15 @@ export default defineConfig({
   fullyParallel: false,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: 'http://localhost:4190',
     launchOptions: {
       // A fake camera, so the camera flow can be tested without a real one.
       args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
     },
   },
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4173 --strictPort',
-    url: 'http://localhost:4173',
+    command: 'npm run build && npm run preview',
+    url: 'http://localhost:4190',
     reuseExistingServer: true,
     timeout: 180_000,
   },

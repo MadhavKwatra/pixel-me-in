@@ -44,6 +44,10 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 2000,
   },
+  // Own ports (not Vite's default 5173/4173): a service worker from another
+  // local project on the default port would otherwise take over the page.
+  server: { port: 5190, strictPort: true },
+  preview: { port: 4190, strictPort: true },
   plugins: [
     cspPlugin(),
     VitePWA({
