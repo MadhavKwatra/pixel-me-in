@@ -37,8 +37,12 @@ export function drawPreset(index: number): HTMLCanvasElement {
   // No background: the outline then hugs the head shape.
 
   if (p.style === 'long') {
+    // Long hair behind the face: rounded on top, falling to the shoulders.
     ctx.fillStyle = p.hair;
-    ctx.fillRect(S * 0.18, S * 0.3, S * 0.64, S * 0.7);
+    ctx.beginPath();
+    ctx.ellipse(S / 2, S * 0.5, S * 0.36, S * 0.38, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(S * 0.14, S * 0.5, S * 0.72, S * 0.36);
   }
   // face
   ctx.fillStyle = p.skin;

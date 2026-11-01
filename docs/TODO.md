@@ -10,7 +10,7 @@
 
 ## Next (v1.x)
 
-- [ ] Background music (chiptune loop) with its own volume setting.
+- [ ] Music volume slider (music is on/off for now).
 - [ ] A pixel font (OFL licensed, self-hosted).
 - [ ] More hats and outfits (good first issues).
 - [ ] Remappable keys.

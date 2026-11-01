@@ -5,6 +5,7 @@
 
 export interface Settings {
   muted: boolean;
+  music: boolean;
   reducedMotion: boolean;
   slowMode: boolean;
   vibration: boolean;
@@ -41,6 +42,7 @@ function write(key: string, value: unknown) {
 export function getSettings(): Settings {
   return read<Settings>('pmi:settings', {
     muted: false,
+    music: true,
     reducedMotion: prefersReducedMotion(),
     slowMode: false,
     vibration: true,

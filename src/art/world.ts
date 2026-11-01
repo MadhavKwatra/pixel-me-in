@@ -399,6 +399,39 @@ export const SPRITES: Record<string, { w: number; h: number; draw: Painter }> = 
     },
   },
   spark: { w: 2, h: 2, draw: (ctx) => rect(ctx, '#ffffff', 0, 0, 2, 2) },
+  /** One pixel, tinted and scaled for the "break into pixels" effect. */
+  pixel: { w: 1, h: 1, draw: (ctx) => rect(ctx, '#ffffff', 0, 0, 1, 1) },
+  puff: {
+    w: 6,
+    h: 6,
+    draw: (ctx) => {
+      pixelDisc(ctx, 'rgba(255,255,255,0.9)', 3, 3, 3);
+      rect(ctx, 'rgba(255,255,255,1)', 2, 1, 2, 1);
+    },
+  },
+  shadow: {
+    w: 30,
+    h: 6,
+    draw: (ctx) => {
+      ctx.fillStyle = 'rgba(20,18,28,0.35)';
+      for (let y = 0; y < 6; y++) {
+        const half = Math.round(15 * Math.sqrt(1 - ((y - 2.5) / 3) ** 2));
+        ctx.fillRect(15 - half, y, half * 2, 1);
+      }
+    },
+  },
+  speedline: { w: 28, h: 1, draw: (ctx) => rect(ctx, 'rgba(255,255,255,0.7)', 0, 0, 28, 1) },
+  cloud: {
+    w: 48,
+    h: 18,
+    draw: (ctx) => {
+      pixelDisc(ctx, '#ffffff', 14, 11, 7);
+      pixelDisc(ctx, '#ffffff', 26, 8, 8);
+      pixelDisc(ctx, '#ffffff', 37, 11, 6);
+      rect(ctx, '#ffffff', 8, 11, 34, 7);
+      rect(ctx, '#e3f1fb', 8, 16, 34, 2);
+    },
+  },
   robot0: { w: 84, h: 104, draw: (ctx) => drawRobot(ctx, 0) },
   robot1: { w: 84, h: 104, draw: (ctx) => drawRobot(ctx, 1) },
 };

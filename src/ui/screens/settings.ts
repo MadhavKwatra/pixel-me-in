@@ -1,11 +1,11 @@
-import { setMuted } from '../../audio/sfx';
 import { clearAllData } from '../../face/faceStore';
 import { getSettings, setSettings, type Settings } from '../../storage/local';
 import type { Screen } from '../app';
 import { onActions, render, toast } from '../dom';
 
 const TOGGLES: [keyof Settings, string, string][] = [
-  ['muted', 'Mute sound', ''],
+  ['muted', 'Mute all sound', ''],
+  ['music', 'Music', 'Chiptune music while you run.'],
   ['reducedMotion', 'Reduce motion', 'No screen shake, no flashes, calmer effects.'],
   ['slowMode', 'Slow mode', 'The game runs 25% slower. Easier to react.'],
   ['vibration', 'Vibrate on crash', 'Android phones only.'],
@@ -42,7 +42,7 @@ export const settingsScreen: Screen = (app, root) => {
     input.addEventListener('change', () => {
       const k = input.dataset.k as keyof Settings;
       setSettings({ [k]: input.checked });
-      if (k === 'muted') setMuted(input.checked);
+      if (k === 'muted' || k === 'music') app.applySoundSettings();
       if (k === 'reducedMotion') app.applyMotionSetting();
     }),
   );

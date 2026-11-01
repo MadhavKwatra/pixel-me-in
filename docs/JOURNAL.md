@@ -2,6 +2,26 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-01 – v0.2 phases 2 + 3: game feel, tutorial, power-ups
+
+**Game feel (phase 2)**
+
+- New body drawn from a tiny skeleton (`src/art/body.ts`): 8-frame run, idle, jump, fall, land, slide, hurt; outlined and shaded; 5 outfits.
+- Mario-style controls: jump buffer (130 ms), coyote time (90 ms), faster falling, floaty apex while jump is held, short hop.
+- Juice: squash/stretch on the head, run dust, landing puffs, slide sparks, shadow, "+1" pops, speed lines, bobbing/wobbling obstacles, clouds, robot stomp dust.
+- Crash: short hit-stop, then the character breaks into its own pixels ("de-digitize").
+- "Ready… GO!" start. Chiptune music per zone (`src/audio/music.ts`), Music toggle in Settings.
+- Pause button is bigger and shows "Esc" on keyboards.
+
+**Teaching + balance (phase 3)**
+
+- Interactive tutorial: jump → slide → double jump → grab a power-up. Time slows to 25 % near each lesson until the player does the move; touch screens glow on the side to tap, keyboards show the key.
+- Power-ups: first one at 120 m, then at least one every 250 m (10 % chance per pattern in between). Unit-tested.
+
+**Dev tools**
+
+- `scripts/preview-sprites.mjs`, `scripts/play-check.mjs`, `scripts/contact-sheet.mjs`.
+
 ## 2026-11-01 – v0.2 phase 1b: fewer, better looks
 
 - Owner test: only Fine (48 px) looked like them. Faces at 16–24 px lose identity, so the size picker is gone.

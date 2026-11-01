@@ -62,8 +62,26 @@ export function nextGapPx(
 export type Pattern =
   'low' | 'crate' | 'high' | 'lowLow' | 'lowGears' | 'highGears' | 'gearsLine' | 'power';
 
-export function pickPattern(rng: () => number, distance: number, powerActive: boolean): Pattern {
-  if (distance > 150 && !powerActive && rng() < 0.06) return 'power';
+/** The first power-up comes early (and is part of the tutorial)… */
+export const FIRST_POWER_M = 120;
+/** …and after that, never more than this many metres without one. */
+export const POWER_PITY_M = 250;
+const POWER_CHANCE = 0.1;
+
+/**
+ * Pick the next pattern. `lastPowerM` is where the last power-up spawned
+ * (start a run with FIRST_POWER_M - POWER_PITY_M so the first one lands at FIRST_POWER_M).
+ */
+export function pickPattern(
+  rng: () => number,
+  distance: number,
+  powerActive: boolean,
+  lastPowerM = -Infinity,
+): Pattern {
+  if (!powerActive) {
+    if (distance - lastPowerM >= POWER_PITY_M) return 'power';
+    if (distance > FIRST_POWER_M && rng() < POWER_CHANCE) return 'power';
+  }
   const d = difficulty(distance);
   const table: [Pattern, number][] = [
     ['low', 3],
@@ -83,8 +101,21 @@ export function pickPattern(rng: () => number, distance: number, powerActive: bo
   return 'low';
 }
 
-/** First-run tutorial: fixed, gentle patterns. */
-export const TUTORIAL_PATTERNS: Pattern[] = ['lowGears', 'highGears', 'low'];
+/** What the player must do in each tutorial lesson. */
+export type LessonAction = 'jump' | 'slide' | 'double' | 'power';
+
+export interface Lesson {
+  pattern: Pattern | 'doubleGears' | 'tutorialPower';
+  action: LessonAction;
+}
+
+/** First-run tutorial: one lesson per move. Time slows down until the player does it. */
+export const TUTORIAL: Lesson[] = [
+  { pattern: 'low', action: 'jump' },
+  { pattern: 'high', action: 'slide' },
+  { pattern: 'doubleGears', action: 'double' },
+  { pattern: 'tutorialPower', action: 'power' },
+];
 
 export type PowerId = 'shield' | 'magnet' | 'jetpack';
 export const POWERS: PowerId[] = ['shield', 'magnet', 'jetpack'];

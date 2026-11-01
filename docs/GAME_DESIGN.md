@@ -41,7 +41,12 @@ A wooden crate appears in every zone. After Space, the zones loop ("lap 2").
 - Speed: 230 px/s → +0.12 px/s per metre → max 520 px/s. Slow mode: ×0.75.
 - 40 world px = 1 m. Gap between patterns: 1.7 s → 0.95 s with difficulty, random ×0.85–1.3, ×0.8 in a robot chase, never below 0.8 s.
 - Jump −640 px/s, double jump −560, gravity 1900. High obstacles start 60 px above the ground; standing hitbox is 64 px tall, sliding 38 px.
-- Power-up chance: 6 % per pattern after 150 m, never while one is active.
+- Power-ups: first at 120 m, then at least one every 250 m (10 % chance per pattern in between), never while one is active.
+- Feel: jump buffer 130 ms, coyote time 90 ms, extra fall gravity +1000, apex float while jump is held.
+
+## Tutorial (first run)
+
+Jump → slide → double jump → grab a power-up. Time slows to 25 % near each lesson until the player does the move. Replay it from How to play.
 
 ## Power-ups
 

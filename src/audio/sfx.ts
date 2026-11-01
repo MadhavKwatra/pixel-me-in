@@ -10,6 +10,11 @@ export function setMuted(m: boolean) {
   muted = m;
 }
 
+/** Shared audio context (used by the music player too). */
+export function getAudioContext(): AudioContext | null {
+  return ac;
+}
+
 export function unlockAudio() {
   if (!ac) {
     const Ctor =
@@ -72,4 +77,11 @@ export const sfx = {
   zap: () => tone(120, 0.6, { type: 'sawtooth', to: 1800, vol: 0.05 }),
   shutter: () => noise(0.08, 0.2),
   robot: () => tone(90, 0.3, { type: 'square', to: 60, vol: 0.06 }),
+  land: () => tone(140, 0.06, { type: 'triangle', to: 90, vol: 0.05 }),
+  ready: () => tone(523, 0.12, { vol: 0.06 }),
+  go: () => {
+    tone(784, 0.1, { vol: 0.07 });
+    tone(1047, 0.18, { vol: 0.07, delay: 0.1 });
+  },
+  dissolve: () => tone(900, 0.5, { type: 'square', to: 120, vol: 0.05 }),
 };

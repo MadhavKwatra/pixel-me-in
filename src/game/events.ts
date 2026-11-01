@@ -7,9 +7,11 @@ export const EVENTS = {
   chase: 'pmi:chase',
   over: 'pmi:gameover',
   pause: 'pmi:pauseRequest',
+  /** Big centre text: "Ready", "GO!". */
+  announce: 'pmi:announce',
 } as const;
 
-export type HintKind = 'jump' | 'slide' | 'again' | 'done';
+export type HintKind = 'jump' | 'slide' | 'double' | 'power' | 'nice' | 'again' | 'done';
 
 export interface HudData {
   metres: number;

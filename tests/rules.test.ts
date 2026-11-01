@@ -53,3 +53,22 @@ describe('fairness', () => {
     for (let i = 0; i < 2000; i++) expect(pickPattern(rng, 1000, true)).not.toBe('power');
   });
 });
+
+describe('power-up schedule', () => {
+  it('gives the first power-up at FIRST_POWER_M and then at least every POWER_PITY_M', async () => {
+    const { FIRST_POWER_M, POWER_PITY_M } = await import('../src/game/rules');
+    const rng = makeRng(11);
+    let last = FIRST_POWER_M - POWER_PITY_M;
+    const spawns: number[] = [];
+    for (let d = 0; d < 3000; d += 8) {
+      if (pickPattern(rng, d, false, last) === 'power') {
+        spawns.push(d);
+        last = d;
+      }
+    }
+    expect(spawns[0]).toBeLessThanOrEqual(FIRST_POWER_M + 8);
+    for (let i = 1; i < spawns.length; i++) {
+      expect(spawns[i] - spawns[i - 1]).toBeLessThanOrEqual(POWER_PITY_M + 8);
+    }
+  });
+});

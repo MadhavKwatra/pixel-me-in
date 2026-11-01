@@ -2,6 +2,7 @@
  * The app shell: opens/closes the full-screen game, switches screens, and
  * runs the Play flow. Screens live in ./screens/*.ts.
  */
+import { pauseMusic, resumeMusic, setMusicEnabled, stopMusic } from '../audio/music';
 import { setMuted, sfx, unlockAudio } from '../audio/sfx';
 import { drawBodySheet } from '../art/body';
 import { loadAvatar, type AvatarConfig } from '../face/faceStore';
@@ -60,7 +61,7 @@ export class App {
 
   async open(first: ScreenName = 'menu') {
     unlockAudio();
-    setMuted(getSettings().muted);
+    this.applySoundSettings();
     this.applyMotionSetting();
     document.body.classList.add('in-app');
     this.root.classList.remove('hidden');
@@ -101,6 +102,12 @@ export class App {
     this.base = this.avatar ? await loadFace(this.avatar) : null;
   }
 
+  applySoundSettings() {
+    const s = getSettings();
+    setMuted(s.muted);
+    setMusicEnabled(s.music && !s.muted);
+  }
+
   applyMotionSetting() {
     document.documentElement.classList.toggle('reduced-motion', getSettings().reducedMotion);
   }
@@ -128,7 +135,7 @@ export class App {
     }
 
     this.running = true;
-    this.hud.show(isTouch() && !settings.tutorialDone);
+    this.hud.show();
     startRun({
       seed: (Math.random() * 2 ** 32) >>> 0,
       slowMode: settings.slowMode,
@@ -143,6 +150,7 @@ export class App {
   pause() {
     if (!this.running || this.current === 'pause') return;
     pauseRun();
+    pauseMusic();
     this.go('pause');
   }
 
@@ -150,10 +158,12 @@ export class App {
     this.go(null);
     if (this.checkOrientation()) return;
     resumeRun();
+    resumeMusic();
   }
 
   quitToMenu() {
     stopRun();
+    stopMusic();
     this.running = false;
     this.hud.hide();
     this.go('menu');
@@ -163,7 +173,10 @@ export class App {
   checkOrientation(): boolean {
     const blocked = this.running && isTouch() && isPortrait();
     $('#rotate').classList.toggle('hidden', !blocked);
-    if (blocked) pauseRun();
+    if (blocked) {
+      pauseRun();
+      pauseMusic();
+    }
     return blocked;
   }
 
@@ -174,6 +187,7 @@ export class App {
     onGame(EVENTS.hud, (d: Parameters<Hud['update']>[0]) => this.hud.update(d));
     onGame(EVENTS.zone, (d: { index: number; name: string }) => this.hud.banner(d.name, d.index));
     onGame(EVENTS.chase, (on: boolean) => this.hud.chase(on));
+    onGame(EVENTS.announce, (text: string) => this.hud.announce(text));
     onGame(EVENTS.hint, (h: Parameters<Hud['hint']>[0]) => {
       this.hud.hint(h);
       if (h === 'done') setSettings({ tutorialDone: true });
