@@ -1,12 +1,19 @@
 // Dev tool: turn the creator's photo into several pixel-character variants,
 // so the owner can pick the one shown on the landing page.
-//   node scripts/creator-variants.mjs [photo] [baseUrl]   (needs the dev server)
+//   node scripts/creator-variants.mjs [photo] [baseUrl] [--export N]   (needs the dev server)
 // Output: test-results/creator/variants.png (+ crop.png). The photo itself stays local.
+// --export N also writes variant N's 8 run frames to public/brand/creator-run.png
+// (pixel art only – that file is committed and shown on the landing page).
 import { chromium } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const photo = process.argv[2] ?? 'e2e/local-faces/myPhoto.jpg';
-const base = process.argv[3] ?? 'http://localhost:5190';
+const args = process.argv
+  .slice(2)
+  .filter((a, i, all) => a !== '--export' && all[i - 1] !== '--export');
+const exportAt = process.argv.indexOf('--export');
+const exportN = exportAt > 0 ? Number(process.argv[exportAt + 1]) : 0;
+const photo = args[0] ?? 'e2e/local-faces/myPhoto.jpg';
+const base = args[1] ?? 'http://localhost:5190';
 const out = 'test-results/creator';
 mkdirSync(out, { recursive: true });
 
@@ -83,5 +90,35 @@ const dataUrl = await page.evaluate(async (variants) => {
   return sheet.toDataURL('image/png');
 }, VARIANTS);
 writeFileSync(`${out}/variants.png`, Buffer.from(dataUrl.split(',')[1], 'base64'));
+
+if (exportN) {
+  const sheetUrl = await page.evaluate(
+    async (v) => {
+      const { loadAvatar } = await import('/src/face/faceStore.ts');
+      const { loadFace, renderFrames } = await import('/src/face/renderAvatar.ts');
+      const { RUN_FRAMES } = await import('/src/art/body.ts');
+      const avatar = await loadAvatar();
+      const face = await loadFace(avatar);
+      const cfg = {
+        ...avatar,
+        style: { ...avatar.style, style: v.style },
+        outfit: v.outfit,
+        hat: v.hat ?? null,
+        faceAcc: v.faceAcc ?? null,
+      };
+      const frames = renderFrames(face, cfg, 1, RUN_FRAMES);
+      const c = document.createElement('canvas');
+      c.width = frames[0].width * frames.length;
+      c.height = frames[0].height;
+      const ctx = c.getContext('2d');
+      frames.forEach((f, i) => ctx.drawImage(f, i * f.width, 0));
+      return c.toDataURL('image/png');
+    },
+    VARIANTS[exportN - 1],
+  );
+  mkdirSync('public/brand', { recursive: true });
+  writeFileSync('public/brand/creator-run.png', Buffer.from(sheetUrl.split(',')[1], 'base64'));
+  console.log(`exported variant ${exportN} to public/brand/creator-run.png`);
+}
 await browser.close();
 console.log(`wrote ${out}/variants.png and ${out}/crop.png`);

@@ -10,7 +10,8 @@
 - [x] Robot: new animation; "Robot Rush" attacks; two designs to compare (stumble + catch-up / attacks only).
 - [ ] Owner: play both robot designs and pick one (Settings → Robot (test)); then remove the switch.
 - [x] Share to socials: story image (9:16), X / Threads / WhatsApp / Facebook / LinkedIn, challenge links.
-- [ ] Creator character on the landing page (from the owner's photo; owner picks the look).
+- [x] Creator character on the landing page (from the owner's photo; owner picked "Pixel · T-shirt").
+- [ ] Use the creator character in the social preview image (`og-image.png`) once the domain is set.
 - [ ] Promo videos (landscape 16:9 + vertical 9:16).
 
 ## Before launch

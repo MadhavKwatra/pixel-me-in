@@ -1,6 +1,6 @@
 import { GAME_NAME } from '../../config';
 import { getSettings, getStats } from '../../storage/local';
-import { startMiniScene } from '../miniScene';
+import { characterFrames, startMiniScene } from '../miniScene';
 import type { Screen } from '../app';
 import { formatNumber, onActions, render, toast } from '../dom';
 import { installAvailable, promptInstall } from '../pwa';
@@ -48,8 +48,7 @@ export const menuScreen: Screen = (app, root) => {
     app.base && app.avatar
       ? startMiniScene(
           root.querySelector<HTMLCanvasElement>('.title-scene canvas')!,
-          app.base,
-          app.avatar,
+          characterFrames(app.base, app.avatar),
           getSettings().reducedMotion,
         )
       : () => {};

@@ -35,6 +35,10 @@
 
 Picking a ready-made character also deletes a saved face crop. Clearing your browser's site data removes everything too.
 
+## The character on the landing page
+
+The running character in the landing page's tablet is the maker's own pixel character (`public/brand/creator-run.png`), made from his photo with the same on-device pipeline and published with his consent. Only the small pixel-art frames are in the repository – never the photo or the face crop. Players' own characters are never published anywhere.
+
 ## How it is enforced
 
 - **No backend.** The site is static files.

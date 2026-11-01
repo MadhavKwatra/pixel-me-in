@@ -6,7 +6,7 @@
 import { getSettings } from './storage/local';
 import { $, onActions } from './ui/dom';
 import { showLoader } from './ui/loader';
-import { defaultCharacter, startMiniScene } from './ui/miniScene';
+import { characterFrames, defaultCharacter, sliceSheet, startMiniScene } from './ui/miniScene';
 import { setupNav } from './ui/nav';
 import { promptInstall, setupPwa } from './ui/pwa';
 
@@ -24,10 +24,18 @@ setupNav();
   }
 }
 
-// The tablet in the hero shows a ready-made character running (no photo needed).
+// The tablet shows the maker's own pixel character (public/brand/creator-run.png, used
+// with his consent). If it cannot load, a ready-made character runs instead.
 {
-  const { face, cfg } = defaultCharacter();
-  startMiniScene($<HTMLCanvasElement>('#hero-canvas'), face, cfg, getSettings().reducedMotion);
+  const canvas = $<HTMLCanvasElement>('#hero-canvas');
+  const reduced = getSettings().reducedMotion;
+  const img = new Image();
+  img.onload = () => startMiniScene(canvas, sliceSheet(img, 8), reduced);
+  img.onerror = () => {
+    const { face, cfg } = defaultCharacter();
+    startMiniScene(canvas, characterFrames(face, cfg), reduced);
+  };
+  img.src = new URL('./brand/creator-run.png', document.baseURI).href;
 }
 
 let appPromise: Promise<import('./ui/app').App> | null = null;

@@ -5,7 +5,7 @@
 import type { AvatarConfig } from '../face/faceStore';
 import type { FaceData } from '../face/renderAvatar';
 import { getSettings } from '../storage/local';
-import { defaultCharacter, startMiniScene } from './miniScene';
+import { characterFrames, defaultCharacter, startMiniScene } from './miniScene';
 
 export interface Loader {
   element: HTMLElement;
@@ -29,7 +29,11 @@ export function showLoader(
   const label = el.querySelector<HTMLElement>('.loader-text')!;
   label.textContent = text;
   const { face, cfg } = who ?? defaultCharacter();
-  const stop = startMiniScene(el.querySelector('canvas')!, face, cfg, getSettings().reducedMotion);
+  const stop = startMiniScene(
+    el.querySelector('canvas')!,
+    characterFrames(face, cfg),
+    getSettings().reducedMotion,
+  );
   return {
     element: el,
     setText: (t) => (label.textContent = t),

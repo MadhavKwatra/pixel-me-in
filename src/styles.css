@@ -2077,3 +2077,23 @@ select {
   background: var(--yellow);
   color: var(--ink);
 }
+
+.tablet-caption {
+  position: absolute;
+  left: 50%;
+  bottom: -2.4rem;
+  transform: translateX(-50%) rotate(2deg);
+  white-space: nowrap;
+  font-family: var(--pixel);
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  padding: 0.15rem 0.6rem;
+}
+
+@media (max-width: 640px) {
+  .tablet {
+    margin-bottom: 1.5rem;
+  }
+}

@@ -2,6 +2,13 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part D: the maker on the landing page
+
+- `scripts/creator-variants.mjs` renders 8 looks from the owner's local photo (never committed); the owner picked "Pixel · T-shirt".
+- `--export 1` wrote the 8 run frames (pixel art only, 7 KB) to `public/brand/creator-run.png`; the landing tablet plays them with the caption "That's me, Madhav – the maker. Your turn!" (fallback: a ready-made character).
+- Mini scene now takes ready frames (`characterFrames`, `sliceSheet`).
+- Hats sit a little lower (into the hair).
+
 ## 2026-11-02 – v0.3 part F: share to socials
 
 - Share sheet (`src/ui/shareSheet.ts`) on game over ("Challenge friends") and in the Photo Booth: phone share menu with the picture (Instagram, WhatsApp, Snapchat …), X, Threads, WhatsApp, Facebook, LinkedIn, Copy link, and "Save the picture" in story (1080×1920) or square size.

@@ -21,11 +21,30 @@ export function defaultCharacter(): { face: FaceData; cfg: AvatarConfig } {
   };
 }
 
-/** Start the scene in `canvas`. Returns a stop function. */
+/** Run-cycle frames for a character (the head filter runs once). */
+export function characterFrames(face: FaceData, cfg: AvatarConfig): HTMLCanvasElement[] {
+  return renderFrames(face, cfg, 1, RUN_FRAMES);
+}
+
+/** Cut a horizontal sprite sheet (equal frames) into frames. */
+export function sliceSheet(
+  img: CanvasImageSource & { width: number; height: number },
+  count: number,
+) {
+  const w = img.width / count;
+  return Array.from({ length: count }, (_, i) => {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = img.height;
+    c.getContext('2d')!.drawImage(img, i * w, 0, w, img.height, 0, 0, w, img.height);
+    return c;
+  });
+}
+
+/** Start the scene in `canvas` with these run frames. Returns a stop function. */
 export function startMiniScene(
   canvas: HTMLCanvasElement,
-  face: FaceData,
-  cfg: AvatarConfig,
+  frames: HTMLCanvasElement[],
   reducedMotion: boolean,
   zone = 0,
 ): () => void {
@@ -38,7 +57,6 @@ export function startMiniScene(
   const far = paint(LAYER_SIZE.w, LAYER_SIZE.h, z.far);
   const mid = paint(LAYER_SIZE.w, LAYER_SIZE.h, z.mid);
   const ground = paint(GROUND_TILE.w, GROUND_TILE.h, z.ground);
-  const frames = renderFrames(face, cfg, 1, RUN_FRAMES);
 
   let t = 0;
   let last = performance.now();
