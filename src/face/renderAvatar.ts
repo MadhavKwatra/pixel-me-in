@@ -163,3 +163,46 @@ export function renderCharacter(
   ctx.drawImage(head, -left * scale, 0);
   return out;
 }
+
+/**
+ * Several body frames with the same head, drawn once (the head filter is the
+ * slow part). All frames share one canvas size with the feet on the bottom
+ * edge, so they can be played as an animation outside the game.
+ */
+export function renderFrames(
+  face: FaceData,
+  cfg: AvatarConfig,
+  scale: number,
+  frames: readonly BodyFrame[],
+): HTMLCanvasElement[] {
+  const head = renderHead(face, cfg, scale);
+  const sheet = drawBodySheet(cfg.outfit, skinTone(face, cfg));
+  const P = headPivot(face.meta);
+  const necks = frames.map((f) => NECK[f]);
+  const H = BODY_H + P.y - Math.min(...necks.map((n) => n.y));
+  const hx = Math.max(0, ...necks.map((n) => n.x - P.x));
+  const W = Math.max(hx + HEAD_FRAME, ...necks.map((n) => hx + P.x - n.x + BODY_W));
+  return frames.map((frame) => {
+    const n = NECK[frame];
+    const bodyTop = H - BODY_H;
+    const bodyLeft = hx + P.x - n.x;
+    const hy = bodyTop + n.y - P.y;
+    const out = makeCanvas(W * scale, H * scale);
+    const ctx = ctx2d(out);
+    ctx.imageSmoothingEnabled = false;
+    const fi = BODY_FRAMES.indexOf(frame);
+    ctx.drawImage(
+      sheet,
+      fi * BODY_W,
+      0,
+      BODY_W,
+      BODY_H,
+      bodyLeft * scale,
+      bodyTop * scale,
+      BODY_W * scale,
+      BODY_H * scale,
+    );
+    ctx.drawImage(head, hx * scale, hy * scale);
+    return out;
+  });
+}

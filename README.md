@@ -36,6 +36,8 @@ npm run dev        # http://localhost:5190
 | `npm run lint`    | ESLint                                            |
 | `npm run icons`   | Re-draw icons and the social preview image        |
 
+Dev review tools (need `npm run dev` running; output in `test-results/`): `node scripts/play-check.mjs`, `node scripts/ui-check.mjs`, `node scripts/preview-sprites.mjs`, `node scripts/likeness-gallery.mjs <photo-folder>`.
+
 The camera needs HTTPS or `localhost`.
 
 ## Tech

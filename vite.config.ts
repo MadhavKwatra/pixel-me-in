@@ -1,4 +1,6 @@
 /// <reference types="vitest/config" />
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -37,18 +39,36 @@ function cspPlugin(): Plugin {
   };
 }
 
+/** `<!-- include:name -->` in any page is replaced by partials/name.html (shared header/footer). */
+function partialsPlugin(): Plugin {
+  return {
+    name: 'html-partials',
+    transformIndexHtml(html) {
+      return html.replace(/<!-- include:([\w-]+) -->/g, (_m, name: string) =>
+        readFileSync(resolve(__dirname, 'partials', `${name}.html`), 'utf-8'),
+      );
+    },
+  };
+}
+
+const PAGES = ['index', 'how-to-play', 'privacy', 'about'];
+
 export default defineConfig({
   // Relative base so the build works on GitHub Pages sub-paths and inside an iframe.
   base: './',
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      input: Object.fromEntries(PAGES.map((p) => [p, resolve(__dirname, `${p}.html`)])),
+    },
   },
   // Own ports (not Vite's default 5173/4173): a service worker from another
   // local project on the default port would otherwise take over the page.
   server: { port: 5190, strictPort: true },
   preview: { port: 4190, strictPort: true },
   plugins: [
+    partialsPlugin(),
     cspPlugin(),
     VitePWA({
       registerType: 'prompt',
@@ -75,7 +95,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,ttf}'],
         // MediaPipe (WASM ~13 MB + face models ~4 MB) is too big to precache on install.
         // It is cached the first time the player opens the photo screen.
         globIgnores: ['mediapipe/**'],

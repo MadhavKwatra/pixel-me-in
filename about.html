@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>About – Pixel Me In</title>
+    <meta
+      name="description"
+      content="About Pixel Me In: a fan-made, open-source pixel-art game by Madhav Kwatra, inspired by a cartoon where two brothers zap themselves into a video game."
+    />
+    <meta name="theme-color" content="#1b1f3b" />
+    <meta name="author" content="Madhav Kwatra" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="About – Pixel Me In" />
+    <meta property="og:image" content="./og-image.png" />
+    <script type="module" src="./src/pages.ts"></script>
+  </head>
+  <body>
+    <div class="page">
+      <!-- include:header -->
+      <main class="prose">
+        <h1>About Pixel Me In</h1>
+
+        <h2>The idea</h2>
+        <p>
+          In the <em>Phineas and Ferb</em> episode "Gaming the System" (season 2, 2009), the
+          brothers build a video game and zap themselves into it with a digitizer. This game asks:
+          what if you could do that with your own face, right in your browser?
+        </p>
+        <p>
+          It is a fan-made tribute. It is not affiliated with or endorsed by Disney, and it uses
+          none of the show's characters, names or art.
+        </p>
+
+        <h2>Who made it</h2>
+        <div class="creator">
+          <p>
+            <strong>Madhav Kwatra</strong> – full-stack developer. I built this to learn game
+            development and on-device machine learning, and because it sounded fun.
+          </p>
+          <ul class="links">
+            <li><a href="https://madhavkwatra.in" target="_blank" rel="noopener">Portfolio</a></li>
+            <li>
+              <a href="https://github.com/MadhavKwatra" target="_blank" rel="noopener">GitHub</a>
+            </li>
+            <li>
+              <a href="https://www.linkedin.com/in/madhav-kwatra/" target="_blank" rel="noopener"
+                >LinkedIn</a
+              >
+            </li>
+            <li><a href="https://x.com/madhav_kwatra" target="_blank" rel="noopener">X</a></li>
+          </ul>
+        </div>
+
+        <h2>How it is built</h2>
+        <ul>
+          <li><strong>Phaser 4</strong> runs the game. Menus and pages are plain HTML.</li>
+          <li>
+            <strong>MediaPipe</strong> finds your face and cuts out your head – in your browser.
+          </li>
+          <li>
+            A small pixel filter (written for this game) picks colours from your photo and keeps
+            your eyes and mouth readable.
+          </li>
+          <li>
+            All art, music and sound effects are made in code. There are no image or sound files.
+          </li>
+          <li>It installs as an app and works offline.</li>
+        </ul>
+
+        <h2>Open source</h2>
+        <p>
+          The code is MIT licensed. Ideas, bug reports and new hats are welcome – see
+          <code>CONTRIBUTING.md</code> in the repository.
+        </p>
+
+        <h2>Credits</h2>
+        <ul>
+          <li>Phaser – MIT</li>
+          <li>MediaPipe Tasks Vision and its face models – Apache 2.0</li>
+          <li>Pixelify Sans font – SIL Open Font License</li>
+          <li>idb-keyval – Apache 2.0; vite-plugin-pwa / Workbox – MIT</li>
+        </ul>
+
+        <p><a class="btn btn-big" href="./?play">Play now</a></p>
+      </main>
+      <!-- include:footer -->
+    </div>
+  </body>
+</html>

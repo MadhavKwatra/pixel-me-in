@@ -51,147 +51,57 @@
   <body>
     <!-- ============ Landing page (plain HTML, so search engines can read it) ============ -->
     <div id="landing">
-      <header class="site-header">
-        <a class="logo" href="#top">Pixel Me In</a>
-        <nav aria-label="Page sections">
-          <a href="#how-to-play">How to play</a>
-          <a href="#privacy">Privacy</a>
-          <a href="#about">About</a>
-        </nav>
-      </header>
+      <!-- include:header -->
 
-      <main id="top">
+      <main>
         <section class="hero">
           <div class="hero-text">
-            <h1>Put <em>your</em> face in a pixel-art game.</h1>
+            <h1>Put your face in a pixel-art game.</h1>
             <p class="lead">
-              Take a selfie. Watch it turn into pixels. Then run, jump and slide through a backyard,
-              a rollercoaster, a beach and outer space – with a giant robot on your heels.
+              Take a selfie, watch it turn into pixels, then run through four worlds with a giant
+              robot on your heels.
             </p>
             <div class="hero-actions">
-              <button class="btn btn-big" data-action="play">Play now – it's free</button>
+              <button class="btn btn-big" data-action="play">Play now</button>
               <button class="btn btn-ghost hidden" data-action="install">Install app</button>
             </div>
-            <p class="small">
-              Works on phones, tablets and computers. No account. Your photo never leaves your
-              device.
-            </p>
+            <p class="small">Free. No account. Your photo stays on your device.</p>
           </div>
-          <div class="hero-art" aria-hidden="true">
-            <canvas id="hero-canvas" width="1" height="1"></canvas>
-          </div>
+          <figure class="tablet" aria-label="A character running through the backyard world">
+            <div class="tablet-screen">
+              <canvas id="hero-canvas" width="320" height="180"></canvas>
+              <div class="scan" aria-hidden="true"></div>
+            </div>
+            <span class="tablet-button" aria-hidden="true"></span>
+          </figure>
         </section>
 
-        <section id="how-to-play" class="card">
-          <h2>How to play</h2>
-          <p>
-            Your character runs by itself. Jump over things on the ground. Slide under things in the
-            air. Grab gears. Every 500&nbsp;m you are zapped into a new world. Just before each zap,
-            the robot chases you and everything gets faster.
-          </p>
-          <div class="table-wrap">
-            <table>
-              <caption>
-                Controls
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Action</th>
-                  <th scope="col">Keyboard</th>
-                  <th scope="col">Touch</th>
-                  <th scope="col">Gamepad</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Jump (tap again in the air for a double jump)</td>
-                  <td>Space, ↑ or W, or click</td>
-                  <td>Tap the right half</td>
-                  <td>A</td>
-                </tr>
-                <tr>
-                  <td>Slide (in the air: drop fast)</td>
-                  <td>↓ or S</td>
-                  <td>Hold the left half</td>
-                  <td>B or ↓</td>
-                </tr>
-                <tr>
-                  <td>Pause</td>
-                  <td>Esc or P</td>
-                  <td>Pause button</td>
-                  <td>Start</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <h3>Power-ups (inventions)</h3>
-          <ul class="powers">
-            <li><strong>Shield bubble</strong> – survive one crash.</li>
-            <li><strong>Gear magnet</strong> – pulls nearby gears to you for 8 seconds.</li>
-            <li><strong>Jetpack</strong> – fly over everything for 5 seconds.</li>
-          </ul>
-          <h3>Tips</h3>
-          <ul>
-            <li>Let go of jump early for a small hop.</li>
-            <li>Gears and long runs unlock new hats and outfits in the Photo Booth.</li>
-            <li>
-              Turn on <em>Slow mode</em> or <em>Reduce motion</em> in Settings if you need them.
-            </li>
-          </ul>
-        </section>
+        <ol class="steps" aria-label="How it works">
+          <li><strong>Snap a selfie</strong> or upload a photo.</li>
+          <li><strong>Become pixel art.</strong> Add a hat, glasses or a space suit.</li>
+          <li>
+            <strong>Run, jump and slide</strong> through the backyard, a rollercoaster, the beach
+            and space.
+          </li>
+        </ol>
 
-        <section id="privacy" class="card">
-          <h2>Privacy: your photo stays on your device</h2>
-          <ul>
-            <li>
-              The photo is read by your browser. It is <strong>never uploaded</strong>. There is no
-              server.
-            </li>
-            <li>Face finding runs on your device (MediaPipe, hosted on this same site).</li>
-            <li>
-              Only a small cropped face (256×256) is saved, in your browser's storage. The full
-              photo is thrown away, along with its hidden data (like GPS location).
-            </li>
-            <li>“Delete my data” in Settings removes everything.</li>
-            <li>
-              A security rule (Content-Security-Policy <code>connect-src 'self'</code>) makes the
-              browser block any connection to other sites.
-            </li>
-          </ul>
-          <p>
-            Do not just trust us – check it: open your browser's developer tools, go to the Network
-            tab, and take a photo. Nothing leaves. The source code is public, too.
-          </p>
-        </section>
-
-        <section id="about" class="card">
-          <h2>About</h2>
-          <p>
-            Pixel Me In is a fan-made, open-source game inspired by a cartoon episode where two
-            brothers build a video game and zap themselves into it. It is not affiliated with or
-            endorsed by any studio.
-          </p>
-          <p>Built with Phaser, TypeScript, Vite and MediaPipe. Contributions welcome.</p>
-          <p>
-            Made by <strong>Madhav Kwatra</strong> –
-            <a href="https://madhavkwatra.in" target="_blank" rel="noopener">portfolio</a> ·
-            <a href="https://github.com/MadhavKwatra" target="_blank" rel="noopener">GitHub</a> ·
-            <a href="https://www.linkedin.com/in/madhav-kwatra/" target="_blank" rel="noopener"
-              >LinkedIn</a
-            >
-            ·
-            <a href="https://x.com/madhav_kwatra" target="_blank" rel="noopener">X</a>
-          </p>
+        <section class="cards" aria-label="Learn more">
+          <a class="card-link" href="./how-to-play.html">
+            <h2>How to play</h2>
+            <p>Controls for keyboard, touch and gamepad, power-ups and tips.</p>
+          </a>
+          <a class="card-link" href="./privacy.html">
+            <h2>Privacy</h2>
+            <p>Your photo is never uploaded. See exactly what happens to it.</p>
+          </a>
+          <a class="card-link" href="./about.html">
+            <h2>About</h2>
+            <p>The cartoon that inspired it, who made it, and the open-source code.</p>
+          </a>
         </section>
       </main>
 
-      <footer class="site-footer">
-        <p>
-          Made by
-          <a href="https://madhavkwatra.in" target="_blank" rel="noopener">Madhav Kwatra</a> · MIT
-          licensed · <a href="#privacy">Privacy</a>
-        </p>
-      </footer>
+      <!-- include:footer -->
     </div>
 
     <!-- ============ Game app (full screen, opened by "Play") ============ -->

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Privacy – Pixel Me In</title>
+    <meta
+      name="description"
+      content="Your photo never leaves your device. How Pixel Me In finds and cuts out your face in the browser, what is saved, and how to delete it."
+    />
+    <meta name="theme-color" content="#1b1f3b" />
+    <meta name="author" content="Madhav Kwatra" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="Privacy – Pixel Me In" />
+    <meta property="og:image" content="./og-image.png" />
+    <script type="module" src="./src/pages.ts"></script>
+  </head>
+  <body>
+    <div class="page">
+      <!-- include:header -->
+      <main class="prose">
+        <h1>Your photo stays on your device</h1>
+        <p class="lead">
+          There is no server. Your photo is never uploaded. Everything happens inside your browser,
+          on your phone or computer.
+        </p>
+
+        <h2>What happens to your photo</h2>
+        <ol>
+          <li>
+            <strong>You take or pick a photo.</strong> Your browser reads it. Nothing is sent.
+          </li>
+          <li>
+            <strong>Hidden data is removed.</strong> Photos can carry your location, camera and
+            date. We redraw the picture, which throws that away.
+          </li>
+          <li>
+            <strong>Your face is found on your device.</strong> Two small models (MediaPipe, by
+            Google) find your eyes, mouth and jawline, and which pixels are you. They run in your
+            browser and are served from this website, not from Google.
+          </li>
+          <li>
+            <strong>Your head is cut out.</strong> The background and your neck are removed. You can
+            turn this off.
+          </li>
+          <li>
+            <strong>Only a small square is saved:</strong> 256 × 256 pixels of your head, plus where
+            your eyes and mouth are. The full photo is thrown away.
+          </li>
+          <li><strong>Pixel art is made from that square</strong> every time you play.</li>
+        </ol>
+
+        <h2>What is saved, and where</h2>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What</th>
+              <th scope="col">Where</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Your 256 × 256 head picture and feature positions</td>
+              <td>This browser only (IndexedDB)</td>
+            </tr>
+            <tr>
+              <td>Your character choices (look, hat, outfit)</td>
+              <td>This browser only (IndexedDB)</td>
+            </tr>
+            <tr>
+              <td>Scores and settings</td>
+              <td>This browser only (localStorage)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          To delete everything: open the game, go to <strong>Settings</strong>, press
+          <strong>Delete my data</strong>. Picking a ready-made character also deletes your saved
+          head.
+        </p>
+
+        <h2>Sharing is your choice</h2>
+        <p>
+          "Save picture" and "Share" make an image on your device and hand it to your downloads or
+          your phone's share menu. The game itself never sends it anywhere.
+        </p>
+
+        <h2>How we make sure</h2>
+        <ul>
+          <li>The website is only static files. There is no backend to send a photo to.</li>
+          <li>
+            A browser security rule (<code>connect-src 'self'</code>) blocks any connection to other
+            websites, even by mistake.
+          </li>
+          <li>Automatic tests fail if the page ever talks to another website.</li>
+          <li>No analytics, no ads, no cookies.</li>
+        </ul>
+
+        <h2>Check it yourself</h2>
+        <ol>
+          <li>Open the game and your browser's developer tools, then the Network tab.</li>
+          <li>Take or upload a photo and play.</li>
+          <li>Every request goes to this website. No picture goes anywhere else.</li>
+        </ol>
+        <p>
+          The code is open source. The photo pipeline is explained step by step, with links to the
+          code, in
+          <code>docs/PRIVACY.md</code> in the repository.
+        </p>
+
+        <h2>Hosting</h2>
+        <p>
+          The host serves the website files and may keep normal server logs (such as IP address and
+          pages visited). It never receives your photo.
+        </p>
+      </main>
+      <!-- include:footer -->
+    </div>
+  </body>
+</html>

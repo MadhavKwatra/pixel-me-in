@@ -31,7 +31,7 @@ await page.goto(base);
 await page.getByRole('button', { name: /play now/i }).click();
 await page.getByRole('button', { name: /no photo/i }).click();
 await page.getByRole('button', { name: 'Character 3' }).click();
-await page.getByRole('button', { name: /▶ Play/ }).click();
+await page.getByRole('button', { name: 'Play', exact: true }).click();
 await page.locator('#hud').waitFor({ state: 'visible', timeout: 10_000 });
 await shot('1-ready');
 

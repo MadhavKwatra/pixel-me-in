@@ -2,6 +2,17 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-01 – v0.2 phase 4: UX/UI
+
+- Short landing page: hero with a "tablet" showing a live mini scene, one Play button, 3 steps, 3 cards.
+- Own pages: `how-to-play.html` (device-first controls), `privacy.html`, `about.html` (creator + credits). Shared header/footer from `partials/` via a tiny Vite plugin. Multi-page build; CSP on every page.
+- Pixel font Pixelify Sans (OFL, self-hosted) for headings, buttons and HUD; readable system font for body text; sentence-case buttons.
+- Title-screen menu with your character running; stats; links to Privacy/About.
+- Photo Booth: tabs (Look, Hat, Face, Outfit, Character) with picture buttons, animated preview.
+- Themed loading screens (running character + "digitizing" bar) when the game opens and while finding the face.
+- Phones only see touch controls (in-game How to play, hints, game-over tip).
+- Fixed: Photo Booth overflowed on phones; mini scene crashed when the first animation frame arrived "in the past".
+
 ## 2026-11-01 – v0.2 phases 2 + 3: game feel, tutorial, power-ups
 
 **Game feel (phase 2)**

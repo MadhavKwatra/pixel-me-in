@@ -30,8 +30,8 @@ test('landing page has SEO content and a strict CSP', async ({ page }) => {
   const net = watchNetwork(page);
   await page.goto('/');
   await expect(page.locator('h1')).toContainText('face');
-  await expect(page.locator('#how-to-play')).toBeVisible();
-  await expect(page.locator('#privacy')).toBeVisible();
+  await expect(page.getByRole('link', { name: /How to play/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Privacy/ }).first()).toBeVisible();
   const csp = await page
     .locator('meta[http-equiv="Content-Security-Policy"]')
     .getAttribute('content');
@@ -48,10 +48,11 @@ test('no photo: pick a character, play, and the run starts', async ({ page, isMo
   await page.getByRole('button', { name: /no photo/i }).click();
   await page.getByRole('button', { name: 'Character 2' }).click();
   await expect(page.getByRole('heading', { name: 'Photo Booth' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Face' }).click();
   await page.getByRole('button', { name: 'Sunglasses' }).click();
   await page.screenshot({ path: `test-results/booth-${isMobile ? 'phone' : 'desktop'}.png` });
 
-  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(2500);
   if (!isMobile) await page.keyboard.press('Space');
@@ -95,7 +96,7 @@ test('phone held upright: the game asks to rotate', async ({ page, isMobile }) =
   await page.getByRole('button', { name: /play now/i }).click();
   await page.getByRole('button', { name: /no photo/i }).click();
   await page.getByRole('button', { name: 'Character 1' }).click();
-  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.locator('#rotate')).toBeVisible({ timeout: 10_000 });
   await page.screenshot({ path: 'test-results/rotate.png' });
 });
@@ -106,7 +107,7 @@ test('pause: button, Esc and P all open the pause screen', async ({ page, isMobi
   await page.getByRole('button', { name: /play now/i }).click();
   await page.getByRole('button', { name: /no photo/i }).click();
   await page.getByRole('button', { name: 'Character 1' }).click();
-  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
   await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(1500);
   for (const how of ['button', 'Escape', 'p']) {
@@ -116,4 +117,23 @@ test('pause: button, Esc and P all open the pause screen', async ({ page, isMobi
     await page.getByRole('button', { name: /Resume/ }).click();
     await page.waitForTimeout(400);
   }
+});
+
+test('detail pages load with header, footer and CSP', async ({ page }) => {
+  const net = watchNetwork(page);
+  for (const [path, heading] of [
+    ['/how-to-play.html', 'How to play'],
+    ['/privacy.html', 'Your photo stays on your device'],
+    ['/about.html', 'About Pixel Me In'],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+    await expect(page.locator('.site-footer')).toContainText('Madhav Kwatra');
+    const csp = await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content');
+    expect(csp).toContain("connect-src 'self'");
+  }
+  expect(net.foreign).toEqual([]);
+  expect(net.errors).toEqual([]);
 });

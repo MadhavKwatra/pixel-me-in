@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>How to play – Pixel Me In</title>
+    <meta
+      name="description"
+      content="How to play Pixel Me In: jump, slide and double jump with keyboard, touch or gamepad. Power-ups, the four worlds, unlockable hats and tips."
+    />
+    <meta name="theme-color" content="#1b1f3b" />
+    <meta name="author" content="Madhav Kwatra" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="How to play – Pixel Me In" />
+    <meta property="og:image" content="./og-image.png" />
+    <script type="module" src="./src/pages.ts"></script>
+  </head>
+  <body>
+    <div class="page">
+      <!-- include:header -->
+      <main class="prose">
+        <h1>How to play</h1>
+        <p class="lead">
+          You run by yourself. Jump over things on the ground, slide under things in the air, and
+          grab the gears. Every 500 m you are zapped into a new world.
+        </p>
+
+        <h2 id="controls">Controls</h2>
+        <div class="controls" data-controls>
+          <section class="control-set" data-device="touch">
+            <h3>Touch screen</h3>
+            <dl>
+              <dt>Jump</dt>
+              <dd>Tap the right half of the screen. Tap again in the air to double jump.</dd>
+              <dt>Slide</dt>
+              <dd>Hold the left half. In the air, this drops you down fast.</dd>
+              <dt>Pause</dt>
+              <dd>The pause button in the top right corner.</dd>
+            </dl>
+            <p class="small">Turn your phone sideways to play.</p>
+          </section>
+          <section class="control-set" data-device="keys">
+            <h3>Keyboard</h3>
+            <dl>
+              <dt>Jump</dt>
+              <dd>
+                <kbd>Space</kbd>, <kbd>↑</kbd> or <kbd>W</kbd> (or click). Press again in the air to
+                double jump. Let go early for a small hop.
+              </dd>
+              <dt>Slide</dt>
+              <dd>Hold <kbd>↓</kbd> or <kbd>S</kbd>. In the air, this drops you down fast.</dd>
+              <dt>Pause</dt>
+              <dd><kbd>Esc</kbd> or <kbd>P</kbd>.</dd>
+            </dl>
+          </section>
+          <section class="control-set" data-device="pad">
+            <h3>Gamepad</h3>
+            <dl>
+              <dt>Jump</dt>
+              <dd><kbd>A</kbd> or d-pad up.</dd>
+              <dt>Slide</dt>
+              <dd><kbd>B</kbd> or d-pad down.</dd>
+              <dt>Pause</dt>
+              <dd><kbd>Start</kbd>.</dd>
+            </dl>
+          </section>
+        </div>
+
+        <h2>Power-ups</h2>
+        <p>The first one shows up at about 120 m, then at least one every 250 m.</p>
+        <dl class="powers">
+          <dt>Shield bubble</dt>
+          <dd>Survive one crash.</dd>
+          <dt>Gear magnet</dt>
+          <dd>Pulls nearby gears to you for 8 seconds.</dd>
+          <dt>Jetpack</dt>
+          <dd>Fly over everything for 5 seconds.</dd>
+        </dl>
+
+        <h2>The four worlds</h2>
+        <p>
+          Backyard, rollercoaster, beach and space. Near the end of each world the robot chases you
+          and things come faster. Survive, and you get zapped into the next one.
+        </p>
+
+        <h2>First run</h2>
+        <p>
+          Your first run teaches you the moves. Time slows down until you do each one: jump, slide,
+          double jump, grab a power-up. You can replay it from How to play in the game.
+        </p>
+
+        <h2>Unlocks</h2>
+        <p>Long runs and gears unlock new looks in the Photo Booth:</p>
+        <ul>
+          <li>Crown and space helmet: run 1,500 m in one go.</li>
+          <li>3D glasses: collect 150 gears in total.</li>
+          <li>Space suit: run 5,000 m in total.</li>
+          <li>Lab coat: play 10 runs.</li>
+        </ul>
+
+        <h2>Tips</h2>
+        <ul>
+          <li>Press jump a moment before you land – it still counts.</li>
+          <li>Hold slide in the air to drop fast and slide right away.</li>
+          <li>Slow mode and reduce motion are in Settings.</li>
+        </ul>
+
+        <p><a class="btn btn-big" href="./?play">Play now</a></p>
+      </main>
+      <!-- include:footer -->
+    </div>
+  </body>
+</html>

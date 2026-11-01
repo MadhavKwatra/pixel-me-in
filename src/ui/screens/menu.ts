@@ -1,7 +1,7 @@
 import { GAME_NAME } from '../../config';
 import { CREATOR } from '../../creator';
-import { renderCharacter } from '../../face/renderAvatar';
-import { getStats } from '../../storage/local';
+import { getSettings, getStats } from '../../storage/local';
+import { startMiniScene } from '../miniScene';
 import type { Screen } from '../app';
 import { formatNumber, onActions, render, toast } from '../dom';
 import { installAvailable, promptInstall } from '../pwa';
@@ -23,33 +23,41 @@ export const menuScreen: Screen = (app, root) => {
   const stats = getStats();
   render(
     root,
-    `<div class="panel">
-      <h2>${GAME_NAME}</h2>
-      <div class="menu-grid">
-        <canvas class="preview" width="1" height="1" aria-label="Your character"></canvas>
-        <div class="stack">
-          <button class="btn btn-big" data-action="play" autofocus>▶ Play</button>
+    `<div class="panel title-screen">
+      <h2 class="game-title">${GAME_NAME}</h2>
+      <div class="title-scene"><canvas aria-label="Your character running"></canvas><div class="scan" aria-hidden="true"></div></div>
+      <div class="stack">
+        <button class="btn btn-big" data-action="play" autofocus>Play</button>
+        <div class="row center">
           <button class="btn btn-teal" data-action="booth">Photo Booth</button>
-          <div class="row">
-            <button class="btn btn-ghost" data-action="howto">How to play</button>
-            <button class="btn btn-ghost" data-action="settings">Settings</button>
-          </div>
-          ${installAvailable() ? '<button class="btn btn-ghost" data-action="install">Install app</button>' : ''}
-          <button class="btn btn-ghost" data-action="exit">Exit</button>
+          <button class="btn btn-ghost" data-action="howto">How to play</button>
+          <button class="btn btn-ghost" data-action="settings">Settings</button>
         </div>
+        ${installAvailable() ? '<button class="btn btn-ghost" data-action="install">Install app</button>' : ''}
       </div>
-      <p class="note center">Best: ${formatNumber(stats.best)} m · Gears: ${formatNumber(stats.totalGears)} · Runs: ${stats.runs}${app.debug ? ' · DEBUG ON' : ''}</p>
-      <p class="note center">Made by <a href="${CREATOR.portfolio}" target="_blank" rel="noopener">${CREATOR.name}</a></p>
+      <dl class="stats">
+        <div><dt>Best</dt><dd>${formatNumber(stats.best)} m</dd></div>
+        <div><dt>Gears</dt><dd>${formatNumber(stats.totalGears)}</dd></div>
+        <div><dt>Runs</dt><dd>${stats.runs}</dd></div>
+      </dl>
+      ${app.debug ? '<p class="note center">Debug view is on</p>' : ''}
+      <p class="note center menu-links">
+        <a href="./privacy.html">Privacy</a> <a href="./about.html">About</a>
+        <a href="${CREATOR.portfolio}" target="_blank" rel="noopener">Made by ${CREATOR.name}</a>
+        <button class="linklike" data-action="exit">Exit game</button>
+      </p>
     </div>`,
   );
 
-  if (app.base && app.avatar) {
-    const preview = root.querySelector<HTMLCanvasElement>('canvas.preview')!;
-    const ch = renderCharacter(app.base, app.avatar, 3);
-    preview.width = ch.width;
-    preview.height = ch.height;
-    preview.getContext('2d')!.drawImage(ch, 0, 0);
-  }
+  const stop =
+    app.base && app.avatar
+      ? startMiniScene(
+          root.querySelector<HTMLCanvasElement>('.title-scene canvas')!,
+          app.base,
+          app.avatar,
+          getSettings().reducedMotion,
+        )
+      : () => {};
 
   onActions(root, {
     play: () => void app.play(),
@@ -78,5 +86,8 @@ export const menuScreen: Screen = (app, root) => {
     }
   };
   window.addEventListener('keydown', onKey);
-  return () => window.removeEventListener('keydown', onKey);
+  return () => {
+    stop();
+    window.removeEventListener('keydown', onKey);
+  };
 };

@@ -32,6 +32,7 @@ import { fileToCanvas, videoToCanvas } from '../../face/source';
 import type { Screen } from '../app';
 import { hasCamera, isTouch } from '../device';
 import { escapeHtml, flash, onActions, render } from '../dom';
+import { showLoader } from '../loader';
 
 const PRIVACY_NOTE =
   '<p class="note">🔒 Your photo stays on this device. Nothing is uploaded. Only a small face crop is saved, and you can delete it any time in Settings.</p>';
@@ -160,7 +161,11 @@ export const photoScreen: Screen = (app, root) => {
     if (!source) return;
     render(
       root,
-      `<div class="panel"><h2>Finding your face…</h2><p class="note" aria-live="polite">The first time, the face finder downloads (about 17 MB). After that it works offline.</p></div>`,
+      `<div class="panel"><h2>Finding your face…</h2><div data-loader></div><p class="note">The first time, the face finder downloads (about 17 MB). After that it works offline.</p></div>`,
+    );
+    const loader = showLoader(
+      root.querySelector<HTMLElement>('[data-loader]')!,
+      'Scanning for eyes, mouth and hair…',
     );
 
     let t: CropTransform;
@@ -188,6 +193,7 @@ export const photoScreen: Screen = (app, root) => {
       message =
         'The face finder could not load (are you offline?). Place your face in the circle by hand.';
     }
+    loader.close();
     if (disposed) return;
 
     let useCut = !!cutout;

@@ -1,37 +1,36 @@
 /**
- * Entry point. The landing page is plain HTML; the game (Phaser, MediaPipe)
- * only loads when the player presses Play, so the page itself stays fast.
+ * Entry point of the landing page. The page itself is plain HTML; the game
+ * (Phaser, MediaPipe) only loads when the player presses Play, so the page
+ * stays fast.
  */
-import { DEFAULT_AVATAR } from './face/faceStore';
-import { canvasToPixels } from './face/canvas';
-import { presetMeta } from './face/presets';
-import { drawPreset } from './face/presets';
-import { renderCharacter } from './face/renderAvatar';
+import { getSettings } from './storage/local';
 import { $, onActions } from './ui/dom';
+import { showLoader } from './ui/loader';
+import { defaultCharacter, startMiniScene } from './ui/miniScene';
 import { promptInstall, setupPwa } from './ui/pwa';
 
 setupPwa();
 
-// Hero picture: a ready-made character (no photo needed for the landing page).
+// The tablet in the hero shows a ready-made character running (no photo needed).
 {
-  const hero = $<HTMLCanvasElement>('#hero-canvas');
-  const ch = renderCharacter(
-    { pixels: canvasToPixels(drawPreset(1)), meta: presetMeta() },
-    { ...DEFAULT_AVATAR, presetId: 1, hat: 'cap' },
-    4,
-  );
-  hero.width = ch.width;
-  hero.height = ch.height;
-  hero.getContext('2d')!.drawImage(ch, 0, 0);
+  const { face, cfg } = defaultCharacter();
+  startMiniScene($<HTMLCanvasElement>('#hero-canvas'), face, cfg, getSettings().reducedMotion);
 }
 
 let appPromise: Promise<import('./ui/app').App> | null = null;
 
 async function openApp() {
-  // Load the game code on demand (code splitting).
-  appPromise ??= import('./ui/app').then(({ App }) => new App());
-  const app = await appPromise;
-  await app.open();
+  // Show the loading screen at once: the game code is still downloading.
+  const loader = showLoader(document.body, 'Booting the digitizer…');
+  loader.element.classList.add('loader-fixed');
+  try {
+    // Load the game code on demand (code splitting).
+    appPromise ??= import('./ui/app').then(({ App }) => new App());
+    const app = await appPromise;
+    await app.open();
+  } finally {
+    loader.close();
+  }
 }
 
 onActions($('#landing'), {
@@ -39,5 +38,5 @@ onActions($('#landing'), {
   install: () => void promptInstall(),
 });
 
-// Deep link: /?play opens the game directly (handy for the portfolio).
+// Deep link: /?play opens the game directly (used by the "Play" link on every page and the portfolio).
 if (new URLSearchParams(location.search).has('play')) void openApp();

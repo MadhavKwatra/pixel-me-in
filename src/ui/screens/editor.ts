@@ -1,63 +1,46 @@
 /**
  * Photo Booth: change the look of your character and save/share a picture.
- * Every change is saved right away (IndexedDB, on this device).
+ * Tabs with picture buttons; every change is saved right away (IndexedDB, on this device).
  */
 import { sfx } from '../../audio/sfx';
-import { OUTFIT_LABELS } from '../../art/body';
+import { OUTFIT_LABELS, RUN_FRAMES } from '../../art/body';
 import { FACE_ACCESSORIES, HATS } from '../../face/accessories';
 import { saveAvatar, type AvatarConfig, type OutfitId } from '../../face/faceStore';
 import type { PaletteId } from '../../face/palettes';
 import { PRESETS } from '../../face/presets';
-import { renderCharacter } from '../../face/renderAvatar';
+import { renderFrames, renderHead } from '../../face/renderAvatar';
 import type { FaceStyle } from '../../face/stylize';
-import { getStats } from '../../storage/local';
+import { getSettings, getStats } from '../../storage/local';
 import { isUnlocked, unlockHint } from '../../storage/unlocks';
 import type { Screen } from '../app';
-import { onActions, render } from '../dom';
+import { escapeHtml, onActions, render } from '../dom';
 import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
 
-const PALETTE_LABEL: Record<PaletteId, string> = {
-  natural: 'Natural',
-  game: 'Game colours',
-  grey: 'Grey',
-  retro: 'Retro green',
-};
+type Tab = 'look' | 'hat' | 'face' | 'outfit' | 'character';
 
 interface Option {
+  field: string;
   value: string;
   label: string;
+  /** Config to draw the thumbnail with. */
+  preview: Partial<AvatarConfig>;
   locked?: string;
+  /** Thumbnail shows the whole body instead of the head. */
+  body?: boolean;
 }
 
-function group(
-  legend: string,
-  field: string,
-  options: Option[],
-  current: string,
-  disabled = false,
-) {
-  return `<fieldset ${disabled ? 'disabled' : ''}>
-    <legend>${legend}</legend>
-    <div class="choices">
-      ${options
-        .map(
-          (o) =>
-            `<button type="button" class="choice" data-action="set" data-field="${field}" data-value="${o.value}"
-              aria-pressed="${o.value === current}" ${o.locked ? `disabled title="Locked: ${o.locked}"` : ''}>
-              ${o.locked ? '🔒 ' : ''}${o.label}</button>`,
-        )
-        .join('')}
-    </div>
-    ${
-      options.some((o) => o.locked)
-        ? `<p class="note">🔒 ${options
-            .filter((o) => o.locked)
-            .map((o) => `${o.label}: ${o.locked}`)
-            .join(' · ')}</p>`
-        : ''
-    }
-  </fieldset>`;
-}
+const STYLES: [FaceStyle, string][] = [
+  ['pixel', 'Pixel'],
+  ['cartoon', 'Cartoon'],
+  ['original', 'Photo'],
+];
+
+const PALETTES: [PaletteId, string][] = [
+  ['natural', 'Natural'],
+  ['game', 'Game colours'],
+  ['grey', 'Grey'],
+  ['retro', 'Retro green'],
+];
 
 export const editorScreen: Screen = (app, root) => {
   if (!app.avatar || !app.base) {
@@ -66,87 +49,233 @@ export const editorScreen: Screen = (app, root) => {
   }
   const stats = getStats();
   const lock = (id: string) => (isUnlocked(id, stats) ? undefined : unlockHint(id));
+  let tab: Tab = 'look';
+  let animTimer = 0;
+
+  const optionsFor = (t: Tab, cfg: AvatarConfig): { title: string; options: Option[] }[] => {
+    const style = (s: Partial<AvatarConfig['style']>) => ({ style: { ...cfg.style, ...s } });
+    switch (t) {
+      case 'look':
+        return [
+          {
+            title: 'Style',
+            options: STYLES.map(([v, label]) => ({
+              field: 'style',
+              value: v,
+              label,
+              preview: style({ style: v }),
+            })),
+          },
+          {
+            title: 'Colours',
+            options: PALETTES.map(([v, label]) => ({
+              field: 'palette',
+              value: v,
+              label,
+              preview: style({ palette: v }),
+            })),
+          },
+          {
+            title: 'Outline',
+            options: [
+              { field: 'outline', value: 'true', label: 'On', preview: style({ outline: true }) },
+              {
+                field: 'outline',
+                value: 'false',
+                label: 'Off',
+                preview: style({ outline: false }),
+              },
+            ],
+          },
+        ];
+      case 'hat':
+        return [
+          {
+            title: 'Hat',
+            options: [
+              { field: 'hat', value: '', label: 'None', preview: { hat: null } },
+              ...HATS.map((h) => ({
+                field: 'hat',
+                value: h.id,
+                label: h.label,
+                preview: { hat: h.id },
+                locked: lock(h.id),
+              })),
+            ],
+          },
+        ];
+      case 'face':
+        return [
+          {
+            title: 'Face',
+            options: [
+              { field: 'faceAcc', value: '', label: 'None', preview: { faceAcc: null } },
+              ...FACE_ACCESSORIES.map((a) => ({
+                field: 'faceAcc',
+                value: a.id,
+                label: a.label,
+                preview: { faceAcc: a.id },
+                locked: lock(a.id),
+              })),
+            ],
+          },
+        ];
+      case 'outfit':
+        return [
+          {
+            title: 'Outfit',
+            options: (Object.keys(OUTFIT_LABELS) as OutfitId[]).map((o) => ({
+              field: 'outfit',
+              value: o,
+              label: OUTFIT_LABELS[o],
+              preview: { outfit: o },
+              locked: lock(o),
+              body: true,
+            })),
+          },
+        ];
+      case 'character':
+        return [
+          {
+            title: 'Character',
+            options: PRESETS.map((_, i) => ({
+              field: 'presetId',
+              value: String(i),
+              label: `Character ${i + 1}`,
+              preview: { presetId: i },
+            })),
+          },
+        ];
+    }
+  };
+
+  const currentValue = (cfg: AvatarConfig, field: string): string => {
+    switch (field) {
+      case 'style':
+        return cfg.style.style;
+      case 'palette':
+        return cfg.style.palette;
+      case 'outline':
+        return String(cfg.style.outline);
+      case 'hat':
+        return cfg.hat ?? '';
+      case 'faceAcc':
+        return cfg.faceAcc ?? '';
+      case 'outfit':
+        return cfg.outfit;
+      case 'presetId':
+        return String(cfg.presetId);
+    }
+    return '';
+  };
 
   const draw = () => {
     const cfg = app.avatar!;
-    const s = cfg.style;
+    const tabs: [Tab, string][] = [
+      ['look', 'Look'],
+      ['hat', 'Hat'],
+      ['face', 'Face'],
+      ['outfit', 'Outfit'],
+    ];
+    if (cfg.source === 'preset') tabs.push(['character', 'Character']);
+    const groups = optionsFor(tab, cfg);
     render(
       root,
       `<div class="panel panel-wide">
         <h2>Photo Booth</h2>
         <div class="editor">
           <div class="stack">
-            <div class="stage"><canvas width="1" height="1" aria-label="Your character preview"></canvas></div>
+            <div class="stage"><canvas width="1" height="1" aria-label="Your character"></canvas></div>
             <div class="row center">
               <button class="btn" data-action="download">Save picture</button>
               ${canShareFiles() ? '<button class="btn btn-teal" data-action="share">Share</button>' : ''}
             </div>
           </div>
           <div class="stack">
-            ${group(
-              'Look',
-              'style',
-              [
-                { value: 'pixel', label: 'Pixel' },
-                { value: 'cartoon', label: 'Cartoon' },
-                { value: 'original', label: 'Photo' },
-              ],
-              s.style,
-            )}
-            ${group(
-              'Colours',
-              'palette',
-              (Object.keys(PALETTE_LABEL) as PaletteId[]).map((p) => ({
-                value: p,
-                label: PALETTE_LABEL[p],
-              })),
-              s.palette,
-            )}
-            ${group(
-              'Outline',
-              'outline',
-              [
-                { value: 'true', label: 'On' },
-                { value: 'false', label: 'Off' },
-              ],
-              String(s.outline),
-            )}
-            ${group('Hat', 'hat', [{ value: '', label: 'None' }, ...HATS.map((h) => ({ value: h.id, label: h.label, locked: lock(h.id) }))], cfg.hat ?? '')}
-            ${group('Face', 'faceAcc', [{ value: '', label: 'None' }, ...FACE_ACCESSORIES.map((a) => ({ value: a.id, label: a.label, locked: lock(a.id) }))], cfg.faceAcc ?? '')}
-            ${group(
-              'Outfit',
-              'outfit',
-              (Object.keys(OUTFIT_LABELS) as OutfitId[]).map((o) => ({
-                value: o,
-                label: OUTFIT_LABELS[o],
-                locked: lock(o),
-              })),
-              cfg.outfit,
-            )}
-            ${
-              cfg.source === 'preset'
-                ? group(
-                    'Character',
-                    'presetId',
-                    PRESETS.map((_, i) => ({ value: String(i), label: String(i + 1) })),
-                    String(cfg.presetId),
-                  )
-                : ''
-            }
+            <div class="tabs" role="tablist" aria-label="What to change">
+              ${tabs
+                .map(
+                  ([t, label]) =>
+                    `<button role="tab" class="tab" data-action="tab" data-tab="${t}" aria-selected="${t === tab}">${label}</button>`,
+                )
+                .join('')}
+            </div>
+            <div role="tabpanel" class="tabpanel">
+              ${groups
+                .map(
+                  (g) => `<fieldset>
+                    <legend>${g.title}</legend>
+                    <div class="thumbs">
+                      ${g.options
+                        .map((o, i) => {
+                          const on = currentValue(cfg, o.field) === o.value;
+                          return `<button class="thumb${o.body ? ' thumb-body' : ''}" data-action="set" data-field="${o.field}" data-value="${o.value}" data-thumb="${g.title}:${i}"
+                            aria-pressed="${on}" ${o.locked ? `disabled aria-describedby="lock-${o.value}"` : ''}>
+                            <canvas width="1" height="1" aria-hidden="true"></canvas>
+                            <span>${o.locked ? '🔒 ' : ''}${o.label}</span>
+                          </button>`;
+                        })
+                        .join('')}
+                    </div>
+                    ${g.options
+                      .filter((o) => o.locked)
+                      .map(
+                        (o) =>
+                          `<p class="note" id="lock-${o.value}">🔒 ${o.label}: ${escapeHtml(o.locked!)}</p>`,
+                      )
+                      .join('')}
+                  </fieldset>`,
+                )
+                .join('')}
+            </div>
           </div>
         </div>
         <div class="row center" style="margin-top:1rem">
-          <button class="btn btn-big" data-action="play">▶ Play</button>
+          <button class="btn btn-big" data-action="play">Play</button>
           <button class="btn btn-ghost" data-action="newPhoto">${cfg.source === 'photo' ? 'New photo' : 'Use a photo'}</button>
           <button class="btn btn-ghost" data-action="menu">Menu</button>
         </div>
       </div>`,
     );
+    drawThumbs(groups);
+    animatePreview();
+  };
+
+  /** Draw each option as a little picture of you with that option. */
+  const drawThumbs = (groups: { title: string; options: Option[] }[]) => {
+    for (const g of groups) {
+      g.options.forEach((o, i) => {
+        const btn = root.querySelector<HTMLElement>(`[data-thumb="${g.title}:${i}"]`);
+        const canvas = btn?.querySelector('canvas');
+        if (!canvas) return;
+        const cfg = { ...app.avatar!, ...o.preview };
+        const img = o.body
+          ? renderFrames(app.base!, cfg, 1, ['idle'])[0]
+          : renderHead(app.base!, cfg, 1);
+        canvas.width = img.width;
+        canvas.height = img.height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0);
+      });
+    }
+  };
+
+  /** The big preview runs in place (or stands still with reduced motion). */
+  const animatePreview = () => {
+    window.clearInterval(animTimer);
     const canvas = root.querySelector<HTMLCanvasElement>('.stage canvas')!;
-    const ch = renderCharacter(app.base!, cfg, 4);
-    canvas.width = ch.width;
-    canvas.height = ch.height;
-    canvas.getContext('2d')!.drawImage(ch, 0, 0);
+    const reduced = getSettings().reducedMotion;
+    const frames = renderFrames(app.base!, app.avatar!, 4, reduced ? ['idle'] : RUN_FRAMES);
+    canvas.width = frames[0].width;
+    canvas.height = frames[0].height;
+    const ctx = canvas.getContext('2d')!;
+    let i = 0;
+    const show = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(frames[i % frames.length], 0, 0);
+      i++;
+    };
+    show();
+    if (!reduced) animTimer = window.setInterval(show, 90);
   };
 
   const set = async (field: string, value: string) => {
@@ -178,12 +307,16 @@ export const editorScreen: Screen = (app, root) => {
     await saveAvatar(cfg);
     if (field === 'presetId') await app.refreshAvatar();
     else app.avatar = cfg;
-    const focusKey = `[data-field="${field}"][data-value="${value}"]`;
     draw();
-    root.querySelector<HTMLElement>(focusKey)?.focus();
+    root.querySelector<HTMLElement>(`[data-field="${field}"][data-value="${value}"]`)?.focus();
   };
 
   onActions(root, {
+    tab: (el) => {
+      tab = el.dataset.tab as Tab;
+      draw();
+      root.querySelector<HTMLElement>(`[data-tab="${tab}"]`)?.focus();
+    },
     set: (el) => void set(el.dataset.field!, el.dataset.value!),
     download: () => void downloadCard(makeCard(app.base!, app.avatar!)),
     share: () => void shareCard(makeCard(app.base!, app.avatar!), 'Me, pixelated!'),
@@ -193,4 +326,5 @@ export const editorScreen: Screen = (app, root) => {
   });
 
   draw();
+  return () => window.clearInterval(animTimer);
 };

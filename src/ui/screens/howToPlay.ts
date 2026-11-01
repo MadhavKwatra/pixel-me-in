@@ -37,7 +37,7 @@ const CONTROLS: Record<Kind, { label: string; rows: [string, string][] }> = {
 };
 
 export const howToPlayScreen: Screen = (app, root) => {
-  let kind: Kind = hasGamepad() ? 'pad' : isTouch() ? 'touch' : 'keys';
+  const kind: Kind = hasGamepad() ? 'pad' : isTouch() ? 'touch' : 'keys';
 
   const draw = () => {
     render(
@@ -45,17 +45,20 @@ export const howToPlayScreen: Screen = (app, root) => {
       `<div class="panel">
         <h2>How to play</h2>
         <p>You run by yourself. Jump over things on the ground, slide under things in the air, and grab gears.</p>
-        <div class="choices" role="group" aria-label="Controls for">
-          ${(Object.keys(CONTROLS) as Kind[])
-            .map(
-              (k) =>
-                `<button class="choice" data-action="kind" data-k="${k}" aria-pressed="${k === kind}">${CONTROLS[k].label}</button>`,
-            )
-            .join('')}
-        </div>
+        <h3>${CONTROLS[kind].label} controls</h3>
         <dl>
           ${CONTROLS[kind].rows.map(([a, b]) => `<dt><strong>${a}</strong></dt><dd>${b}</dd>`).join('')}
         </dl>
+        <details>
+          <summary>Other controls</summary>
+          ${(Object.keys(CONTROLS) as Kind[])
+            .filter((k) => k !== kind)
+            .map(
+              (k) =>
+                `<h4>${CONTROLS[k].label}</h4><dl>${CONTROLS[k].rows.map(([a, b]) => `<dt><strong>${a}</strong></dt><dd>${b}</dd>`).join('')}</dl>`,
+            )
+            .join('')}
+        </details>
         <h3>Power-ups</h3>
         <ul>
           <li><strong>Shield</strong> (blue): survive one crash.</li>
@@ -73,11 +76,6 @@ export const howToPlayScreen: Screen = (app, root) => {
   };
 
   onActions(root, {
-    kind: (el) => {
-      kind = el.dataset.k as Kind;
-      draw();
-      root.querySelector<HTMLElement>(`[data-k="${kind}"]`)?.focus();
-    },
     tutorial: () => {
       setSettings({ tutorialDone: false });
       toast('The tutorial will play on your next run.');

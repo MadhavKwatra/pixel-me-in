@@ -23,9 +23,11 @@ This is a **public, open-source** repo. Never write private info (emails, accoun
 - `src/face/` – photo pipeline: `source` → `detectFace` → `geometry` + `normalizeFace` → `stylize` (pure pixel filter) → `renderAvatar` (+ `accessories`, `presets`), storage in `faceStore`
 - `src/game/` – Phaser: `controller.ts` (the only API the UI uses), `scenes/BootScene` (builds textures from code), `scenes/RunScene` (the game), `Player`, `rules.ts` (pure balance logic), `events.ts`
 - `src/art/` – all pixel art drawn in code (`body.ts`, `world.ts`)
-- `src/ui/` – HTML UI: `app.ts` (shell + play flow), `screens/*`, `hud.ts`, `digitizer.ts`, `shareCard.ts`, `pwa.ts`
+- `src/ui/` – HTML UI: `app.ts` (shell + play flow), `screens/*`, `hud.ts`, `digitizer.ts`, `loader.ts`, `miniScene.ts`, `shareCard.ts`, `pwa.ts`
+- Pages: `index.html` (landing + game app), `how-to-play.html`, `privacy.html`, `about.html`; shared header/footer in `partials/` (`<!-- include:name -->`); `src/pages.ts` for the detail pages
+- `src/audio/` – `sfx.ts` (effects), `music.ts` (chiptune loops)
 - `src/storage/` – settings, stats, unlocks (localStorage, keys prefixed `pmi:`)
-- `tests/` unit tests, `e2e/` browser tests, `scripts/` (MediaPipe copy, icon generator)
+- `tests/` unit tests, `e2e/` browser tests, `scripts/` (MediaPipe copy, icon generator, and dev review tools: `likeness-gallery`, `preview-sprites`, `play-check`, `ui-check`, `contact-sheet` – they need `npm run dev` running and write to `test-results/`)
 
 ## Conventions
 

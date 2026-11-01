@@ -3,7 +3,8 @@
 ## Big picture
 
 ```
-index.html (landing page, plain HTML – what search engines read)
+index.html + how-to-play.html + privacy.html + about.html (plain HTML – what search engines read;
+   shared header/footer from partials/, multi-page Vite build)
    │  "Play" (lazy-loads the game code)
    ▼
 src/ui/app.ts  ── screens (menu, photo, Photo Booth, settings, …) as HTML over the canvas

@@ -4,6 +4,7 @@ import type { GameOverData } from '../../game/events';
 import { getStats, recordRun } from '../../storage/local';
 import { isUnlocked, UNLOCK_RULES } from '../../storage/unlocks';
 import type { Screen } from '../app';
+import { isTouch } from '../device';
 import { formatNumber, onActions, render } from '../dom';
 import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
 
@@ -39,7 +40,7 @@ export const gameOverScreen: Screen = (app, root, arg) => {
           <button class="btn btn-ghost" data-action="menu">Menu</button>
         </div>
       </div>
-      <p class="note">Tip: press Space or Enter to run again.</p>
+      ${isTouch() ? '' : '<p class="note">Tip: press Space or Enter to run again.</p>'}
     </div>`,
   );
 
