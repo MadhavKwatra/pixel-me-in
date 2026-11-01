@@ -2,6 +2,14 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part B: touch controls, full-screen portrait
+
+- Gestures (`src/ui/gestures.ts`, unit-tested): tap anywhere or swipe up = jump, swipe down (hold) = slide / fast fall. One hand is enough.
+- Optional Jump/Slide pad (`src/ui/touchControls.ts`); Settings → Touch buttons: Upright only (default) / Always / Never. Tutorial hints adapt and make the right button glow.
+- The canvas now fills the whole screen at device pixel density; `src/game/view.ts` picks the camera: landscape shows more road on wide phones, portrait shows ~420 world px across with sky above and dirt below (ground ~64 % down). Portrait runs 10 % slower for reaction time.
+- "Rotate your phone" block removed (no orientation lock); one tip on the first upright run.
+- Photo Booth on phones: sticky small preview, one-row tabs, 3 thumbnails per row, sticky action bar.
+
 ## 2026-11-02 – v0.3 part A: pages, footer, feedback
 
 - Phone header: Play button + ☰ menu (Esc / outside click closes); current page highlighted.

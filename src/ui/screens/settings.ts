@@ -1,6 +1,7 @@
 import { clearAllData } from '../../face/faceStore';
 import { getSettings, setSettings, type Settings } from '../../storage/local';
 import type { Screen } from '../app';
+import { isTouch } from '../device';
 import { feedbackHtml, wireFeedback } from '../feedback';
 import { onActions, render, toast } from '../dom';
 
@@ -29,6 +30,16 @@ export const settingsScreen: Screen = (app, root) => {
               <input type="checkbox" data-k="${k}" ${s[k] ? 'checked' : ''} /></label>`,
           )
           .join('')}
+        ${
+          isTouch()
+            ? `<label class="toggle"><span>Touch buttons<br><span class="note">Jump/Slide buttons on screen. Gestures always work: tap = jump, swipe down = slide.</span></span>
+          <select data-touch-buttons>
+            <option value="auto" ${s.touchButtons === 'auto' ? 'selected' : ''}>Upright only</option>
+            <option value="always" ${s.touchButtons === 'always' ? 'selected' : ''}>Always</option>
+            <option value="never" ${s.touchButtons === 'never' ? 'selected' : ''}>Never</option>
+          </select></label>`
+            : ''
+        }
         <label class="toggle"><span>Debug view<br><span class="note">Hitboxes and FPS. For developers.</span></span>
           <input type="checkbox" data-debug ${app.debug ? 'checked' : ''} /></label>
         <h3>Your data</h3>
@@ -48,6 +59,11 @@ export const settingsScreen: Screen = (app, root) => {
   );
 
   wireFeedback(root);
+  root.querySelector<HTMLSelectElement>('[data-touch-buttons]')?.addEventListener('change', (e) => {
+    setSettings({
+      touchButtons: (e.target as HTMLSelectElement).value as Settings['touchButtons'],
+    });
+  });
   root.querySelectorAll<HTMLInputElement>('input[data-k]').forEach((input) =>
     input.addEventListener('change', () => {
       const k = input.dataset.k as keyof Settings;

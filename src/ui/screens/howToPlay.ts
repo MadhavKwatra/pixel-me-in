@@ -10,8 +10,9 @@ const CONTROLS: Record<Kind, { label: string; rows: [string, string][] }> = {
   touch: {
     label: 'Touch',
     rows: [
-      ['Jump', 'Tap the RIGHT half of the screen. Tap again in the air for a double jump.'],
-      ['Slide', 'Hold the LEFT half. In the air, this drops you fast.'],
+      ['Jump', 'Tap anywhere (or swipe up). Tap again in the air for a double jump.'],
+      ['Slide', 'Swipe down and hold. In the air, this drops you fast.'],
+      ['Buttons', 'Prefer buttons? Settings → Touch buttons. Upright phones show them by default.'],
       ['Pause', 'The II button, top right.'],
     ],
   },

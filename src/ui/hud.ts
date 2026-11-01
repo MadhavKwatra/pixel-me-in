@@ -32,10 +32,6 @@ export class Hud {
         </button>
       </div>
       <div data-banners></div>
-      <div class="touch-guide hidden" aria-hidden="true">
-        <div class="zone left"><span>HOLD<br>to slide</span></div>
-        <div class="zone right"><span>TAP<br>to jump</span></div>
-      </div>
       <div class="sr-only" aria-live="polite" data-live></div>
     `;
     this.metresEl = this.root.querySelector('[data-m]')!;
@@ -110,14 +106,10 @@ export class Hud {
   /** Teaching hint. On touch screens the matching half of the screen glows. */
   hint(kind: HintKind | null) {
     this.root.querySelector('.hint')?.remove();
-    const guide = this.root.querySelector<HTMLElement>('.touch-guide');
-    const touch = isTouch();
-    if (guide) {
-      const zone =
-        kind === 'slide' ? 'left' : kind === 'jump' || kind === 'double' ? 'right' : null;
-      guide.classList.toggle('hidden', !touch || !zone);
-      guide.dataset.zone = zone ?? '';
-    }
+    // Touch buttons on screen: make the one to press glow.
+    document.querySelectorAll('.pad-btn').forEach((b) => b.classList.remove('glow'));
+    const glow = kind === 'slide' ? 'slide' : kind === 'jump' || kind === 'double' ? 'jump' : null;
+    if (glow) document.querySelector(`.pad-btn[data-in="${glow}"]`)?.classList.add('glow');
     if (!kind) return;
     const el = document.createElement('div');
     el.className = `hint hint-${kind}`;
@@ -134,6 +126,10 @@ export class Hud {
   }
 }
 
+function padOn() {
+  return !!document.querySelector('#pad:not(.hidden)');
+}
+
 function bump(el: HTMLElement) {
   el.classList.remove('bump');
   void el.offsetWidth;
@@ -148,13 +144,17 @@ function hintHtml(kind: HintKind): string {
   switch (kind) {
     case 'jump':
       return touch
-        ? 'Tap the <b>right</b> side to jump!'
+        ? padOn()
+          ? 'Tap <b>Jump</b> – or tap anywhere!'
+          : 'Tap anywhere to jump!'
         : pad
           ? `Press ${key('A')} to jump!`
           : `Press ${key('Space')} to jump!`;
     case 'slide':
       return touch
-        ? 'Hold the <b>left</b> side to slide!'
+        ? padOn()
+          ? 'Hold <b>Slide</b> – or swipe down!'
+          : 'Swipe <b>down</b> to slide!'
         : pad
           ? `Hold ${key('B')} to slide!`
           : `Hold ${key('↓')} to slide!`;

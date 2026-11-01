@@ -90,15 +90,32 @@ test('camera: snap a photo with the fake camera', async ({ page }) => {
   expect(net.errors).toEqual([]);
 });
 
-test('phone held upright: the game asks to rotate', async ({ page, isMobile }) => {
+test('phone held upright: full-screen run, tap to jump, swipe down to slide', async ({
+  page,
+  isMobile,
+}) => {
   test.skip(!isMobile, 'phone only');
+  const net = watchNetwork(page);
   await page.goto('/');
-  await page.getByRole('button', { name: /play now/i }).click();
+  await page
+    .getByRole('button', { name: /play now/i })
+    .first()
+    .click();
   await page.getByRole('button', { name: /no photo/i }).click();
   await page.getByRole('button', { name: 'Character 1' }).click();
   await page.getByRole('button', { name: 'Play', exact: true }).click();
-  await expect(page.locator('#rotate')).toBeVisible({ timeout: 10_000 });
-  await page.screenshot({ path: 'test-results/rotate.png' });
+  await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  // Upright phones show the Jump/Slide buttons by default; the canvas fills the screen.
+  await expect(page.getByRole('button', { name: 'Jump' })).toBeVisible();
+  const canvas = await page.locator('#game canvas').boundingBox();
+  const vp = page.viewportSize()!;
+  expect(canvas!.height).toBeGreaterThan(vp.height * 0.9);
+  await page.waitForTimeout(1500);
+  await page.touchscreen.tap(vp.width / 2, vp.height / 2);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: 'test-results/portrait-run.png' });
+  expect(Number(await page.locator('[data-m]').textContent())).toBeGreaterThan(0);
+  expect(net.errors).toEqual([]);
 });
 
 test('pause: button, Esc and P all open the pause screen', async ({ page, isMobile }) => {

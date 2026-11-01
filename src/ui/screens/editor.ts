@@ -181,12 +181,12 @@ export const editorScreen: Screen = (app, root) => {
     const groups = optionsFor(tab, cfg);
     render(
       root,
-      `<div class="panel panel-wide">
+      `<div class="panel panel-wide booth">
         <h2>Photo Booth</h2>
         <div class="editor">
           <div class="stack">
             <div class="stage"><canvas width="1" height="1" aria-label="Your character"></canvas></div>
-            <div class="row center">
+            <div class="row center desktop-only">
               <button class="btn" data-action="download">Save picture</button>
               ${canShareFiles() ? '<button class="btn btn-teal" data-action="share">Share</button>' : ''}
             </div>
@@ -230,9 +230,10 @@ export const editorScreen: Screen = (app, root) => {
             </div>
           </div>
         </div>
-        <div class="row center" style="margin-top:1rem">
+        <div class="row center booth-actions">
+          <button class="btn mobile-only" data-action="download">Save</button>
           <button class="btn btn-big" data-action="play">Play</button>
-          <button class="btn btn-ghost" data-action="newPhoto">${cfg.source === 'photo' ? 'New photo' : 'Use a photo'}</button>
+          <button class="btn btn-ghost" data-action="newPhoto">${cfg.source === 'photo' ? 'New photo' : 'Use photo'}</button>
           <button class="btn btn-ghost" data-action="menu">Menu</button>
         </div>
       </div>`,

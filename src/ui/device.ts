@@ -17,7 +17,7 @@ export const hasCamera = () => !!navigator.mediaDevices?.getUserMedia;
 
 export const hasGamepad = () => Array.from(navigator.getGamepads?.() ?? []).some(Boolean);
 
-/** Phones only: go full screen and try to lock landscape (works on Android; iOS ignores it). */
+/** Phones only: go full screen (Android). Any orientation is fine: upright or sideways. */
 export async function enterGameMode(app: HTMLElement) {
   if (!isTouch()) return;
   try {
@@ -25,12 +25,6 @@ export async function enterGameMode(app: HTMLElement) {
       await app.requestFullscreen({ navigationUI: 'hide' });
   } catch {
     /* not allowed here (e.g. iPhone Safari) – fine */
-  }
-  try {
-    const o = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-    await o.lock?.('landscape');
-  } catch {
-    /* not supported – the "rotate your phone" screen covers it */
   }
 }
 

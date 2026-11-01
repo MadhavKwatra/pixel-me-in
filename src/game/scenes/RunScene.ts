@@ -2,11 +2,13 @@ import Phaser from 'phaser';
 import { playGameOverJingle, playZoneMusic, stopMusic } from '../../audio/music';
 import { sfx } from '../../audio/sfx';
 import { GROUND_TILE, GROUND_Y, LAYER_SIZE, ZONES, type ZoneArt } from '../../art/world';
-import { PX_PER_METRE, VIEW_W } from '../../config';
+import { PX_PER_METRE } from '../../config';
+import type { GameInput } from '../../ui/gestures';
 import { DebugOverlay } from '../debugOverlay';
 import { dissolve, popText, puff } from '../effects';
 import { EVENTS, type HintKind, type RunConfig } from '../events';
 import { Player } from '../Player';
+import { computeView, playerX, type View } from '../view';
 import {
   FIRST_POWER_M,
   isBossChase,
@@ -30,13 +32,13 @@ type ArcadeSprite = Phaser.Physics.Arcade.Sprite;
 
 interface Layers {
   sky: Phaser.GameObjects.Image;
+  /** Dirt below the ground band (only visible on tall/portrait screens). */
+  dirt: Phaser.GameObjects.Rectangle;
   far: Phaser.GameObjects.TileSprite;
   mid: Phaser.GameObjects.TileSprite;
   ground: Phaser.GameObjects.TileSprite;
 }
 
-const PLAYER_X = 150;
-const SPAWN_X = VIEW_W + 60;
 const HIGH_BOTTOM = GROUND_Y - 60;
 /** Tutorial: how slow time gets while waiting for the player to act. */
 const SLOW_MO = 0.25;
@@ -61,6 +63,7 @@ export class RunScene extends Phaser.Scene {
   private shadow!: Phaser.GameObjects.Image;
   private clouds: Phaser.GameObjects.Image[] = [];
   private debug?: DebugOverlay;
+  private view!: View;
 
   private distancePx = 0;
   private speed = 0;
@@ -116,22 +119,22 @@ export class RunScene extends Phaser.Scene {
     this.physics.world.timeScale = 1;
     this.tweens.timeScale = 1;
 
+    this.view = computeView(this.scale.width, this.scale.height);
     this.layers = this.makeLayers(ZONES[0]);
     this.clouds = Array.from({ length: 6 }, (_, i) =>
       this.add
-        .image(i * 120 + Math.random() * 60, 30 + Math.random() * 90, 'cloud')
+        .image(i * 120 + Math.random() * 60, this.cloudY(), 'cloud')
         .setDepth(0.5)
         .setAlpha(0.9)
         .setScale(0.8 + Math.random() * 0.6),
     );
 
-    const groundBody = this.add
-      .rectangle(VIEW_W / 2, GROUND_Y + 30, VIEW_W * 2, 60)
-      .setVisible(false);
+    const groundBody = this.add.rectangle(0, GROUND_Y + 30, 6000, 60).setVisible(false);
     this.physics.add.existing(groundBody, true);
 
-    this.shadow = this.add.image(PLAYER_X, GROUND_Y + 1, 'shadow').setDepth(4);
-    this.player = new Player(this, PLAYER_X, {
+    const px = playerX(this.view);
+    this.shadow = this.add.image(px, GROUND_Y + 1, 'shadow').setDepth(4);
+    this.player = new Player(this, px, {
       jump: (double) => this.onPlayerJump(double),
       land: (impact) => this.onPlayerLand(impact),
     });
@@ -162,8 +165,16 @@ export class RunScene extends Phaser.Scene {
     this.setupInput();
     this.debug = cfg.debug ? new DebugOverlay(this) : undefined;
 
+    this.applyView();
+    const onResize = () => this.applyView();
+    this.scale.on('resize', onResize);
+    const onInput = (i: GameInput) => this.touchInput(i);
+    this.game.events.on(EVENTS.input, onInput);
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.keyboard?.removeAllListeners();
+      this.scale.off('resize', onResize);
+      this.game.events.off(EVENTS.input, onInput);
       stopMusic();
     });
     this.emitHud(true);
@@ -204,24 +215,58 @@ export class RunScene extends Phaser.Scene {
     for (const k of ['ESC', 'P']) kb.on(`keydown-${k}`, () => this.emit(EVENTS.pause));
     kb.addCapture(['SPACE', 'UP', 'DOWN']);
 
-    // Two fingers at once (jump while sliding) needs a second pointer.
-    this.input.addPointer(1);
+    // Mouse: click jumps (hold for a higher jump). Touch is handled by the
+    // HTML layer (gestures + optional buttons, src/ui/touchControls.ts).
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      // Touch: left half slides, right half jumps. Mouse: click jumps.
-      if (p.wasTouch && p.x < VIEW_W / 2) {
-        this.slidePointers.add(p.id);
-        this.doSlide();
-      } else {
-        this.doJump();
-      }
+      if (!p.wasTouch) this.doJump();
     });
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => {
-      if (this.slidePointers.delete(p.id)) this.player.releaseSlide();
-      else this.player.releaseJump();
+      if (!p.wasTouch) this.player.releaseJump();
     });
   }
 
-  private slidePointers = new Set<number>();
+  /** Input from touch gestures or on-screen buttons. */
+  private touchInput(i: GameInput) {
+    switch (i) {
+      case 'jumpTap':
+        this.doJump();
+        this.player.softReleaseJump();
+        break;
+      case 'jumpDown':
+        this.doJump();
+        break;
+      case 'jumpUp':
+        this.player.releaseJump();
+        break;
+      case 'slideDown':
+        this.doSlide();
+        break;
+      case 'slideUp':
+        this.player.releaseSlide();
+        break;
+    }
+  }
+
+  // ---------------------------------------------------------------- view
+
+  /** Fit the camera to the screen (called on start and on every resize/rotation). */
+  private applyView() {
+    const v = computeView(this.scale.width, this.scale.height);
+    this.view = v;
+    const cam = this.cameras.main;
+    cam.setZoom(v.zoom);
+    cam.centerOn(v.left + v.width / 2, v.top + v.height / 2);
+    this.layoutLayers(this.layers);
+  }
+
+  private get spawnX() {
+    return this.view.left + this.view.width + 60;
+  }
+
+  private cloudY() {
+    const top = Math.max((this.view?.top ?? 0) + 20, GROUND_Y - 470);
+    return top + Math.random() * (GROUND_Y - 170 - top);
+  }
   private padState = { a: false, b: false, start: false };
 
   private pollGamepad() {
@@ -277,7 +322,8 @@ export class RunScene extends Phaser.Scene {
     const m = metres(this.distancePx, PX_PER_METRE);
     if (!this.started) this.speed = 0;
     else if (this.over) this.speed = Math.max(0, this.speed - 900 * dt);
-    else this.speed = speedAt(m, this.cfg.slowMode);
+    // Portrait shows less road ahead, so it runs a little slower.
+    else this.speed = speedAt(m, this.cfg.slowMode) * (this.view.portrait ? 0.9 : 1);
     this.distancePx += this.speed * dt;
 
     this.layers.far.tilePositionX += this.speed * dt * 0.12;
@@ -285,9 +331,9 @@ export class RunScene extends Phaser.Scene {
     this.layers.ground.tilePositionX += this.speed * dt;
     for (const c of this.clouds) {
       c.x -= (this.speed * 0.05 + 6) * dt;
-      if (c.x < -40) {
-        c.x = VIEW_W + 40;
-        c.y = 30 + Math.random() * 90;
+      if (c.x < this.view.left - 40) {
+        c.x = this.view.left + this.view.width + 40;
+        c.y = this.cloudY();
       }
     }
 
@@ -295,7 +341,7 @@ export class RunScene extends Phaser.Scene {
       for (const child of g.getChildren() as ArcadeSprite[]) {
         if (!child.active) continue;
         child.setVelocityX(-this.speed);
-        if (child.x < -120) child.disableBody(true, true);
+        if (child.x < this.view.left - 120) child.disableBody(true, true);
       }
     }
 
@@ -362,10 +408,19 @@ export class RunScene extends Phaser.Scene {
     if (this.speed > 380 && time > this.lineAt) {
       this.lineAt = time + 70;
       const line = this.add
-        .image(VIEW_W + 20, 30 + Math.random() * 250, 'speedline')
+        .image(
+          this.view.left + this.view.width + 20,
+          Math.max(this.view.top + 20, GROUND_Y - 280) + Math.random() * 260,
+          'speedline',
+        )
         .setDepth(25)
         .setAlpha(0.35 + ((this.speed - 380) / 140) * 0.3);
-      this.tweens.add({ targets: line, x: -40, duration: 260, onComplete: () => line.destroy() });
+      this.tweens.add({
+        targets: line,
+        x: this.view.left - 40,
+        duration: 260,
+        onComplete: () => line.destroy(),
+      });
     }
   }
 
@@ -398,26 +453,26 @@ export class RunScene extends Phaser.Scene {
     let marker: ArcadeSprite;
     switch (lesson.pattern) {
       case 'high':
-        marker = this.addObstacle(z.high.key, SPAWN_X, true, 'slide');
+        marker = this.addObstacle(z.high.key, this.spawnX, true, 'slide');
         break;
       case 'doubleGears':
         // Only reachable with a double jump.
-        marker = this.addGear(SPAWN_X, GROUND_Y - 175);
-        for (let i = 1; i < 5; i++) this.addGear(SPAWN_X + i * 24, GROUND_Y - 175);
+        marker = this.addGear(this.spawnX, GROUND_Y - 175);
+        for (let i = 1; i < 5; i++) this.addGear(this.spawnX + i * 24, GROUND_Y - 175);
         break;
       case 'tutorialPower':
-        marker = this.addPower('shield', SPAWN_X);
+        marker = this.addPower('shield', this.spawnX);
         this.lastPowerM = metres(this.distancePx, PX_PER_METRE);
         break;
       default:
-        marker = this.addObstacle(z.low.key, SPAWN_X, false, 'jump');
+        marker = this.addObstacle(z.low.key, this.spawnX, false, 'jump');
     }
     marker.setData('lesson', index);
   }
 
   private spawnPattern(p: Pattern) {
     const z = this.zone();
-    const x = SPAWN_X;
+    const x = this.spawnX;
     switch (p) {
       case 'low':
         this.addObstacle(z.low.key, x, false, null);
@@ -641,21 +696,41 @@ export class RunScene extends Phaser.Scene {
   // ---------------------------------------------------------------- zones + robot
 
   private makeLayers(z: ZoneArt): Layers {
-    return {
+    const w = this.view.width;
+    const layers: Layers = {
       sky: this.add.image(0, 0, `${z.id}-sky`).setOrigin(0).setDepth(0),
+      dirt: this.add
+        .rectangle(0, GROUND_Y + GROUND_TILE.h, w, 10, pixelColour(this, `${z.id}-ground`, 55))
+        .setOrigin(0)
+        .setDepth(3),
       far: this.add
-        .tileSprite(0, GROUND_Y - LAYER_SIZE.h - 20, VIEW_W, LAYER_SIZE.h, `${z.id}-far`)
+        .tileSprite(0, GROUND_Y - LAYER_SIZE.h - 20, w, LAYER_SIZE.h, `${z.id}-far`)
         .setOrigin(0)
         .setDepth(1),
       mid: this.add
-        .tileSprite(0, GROUND_Y - LAYER_SIZE.h + 10, VIEW_W, LAYER_SIZE.h, `${z.id}-mid`)
+        .tileSprite(0, GROUND_Y - LAYER_SIZE.h + 10, w, LAYER_SIZE.h, `${z.id}-mid`)
         .setOrigin(0)
         .setDepth(2),
       ground: this.add
-        .tileSprite(0, GROUND_Y, VIEW_W, GROUND_TILE.h, `${z.id}-ground`)
+        .tileSprite(0, GROUND_Y, w, GROUND_TILE.h, `${z.id}-ground`)
         .setOrigin(0)
         .setDepth(3),
     };
+    // Above the sky picture: the sky's top colour (tall screens see more sky).
+    this.cameras.main.setBackgroundColor(pixelColour(this, `${z.id}-sky`, 1));
+    this.layoutLayers(layers);
+    return layers;
+  }
+
+  /** Stretch/move the background layers to cover the current view. */
+  private layoutLayers(l: Layers | undefined) {
+    if (!l) return;
+    const v = this.view;
+    l.sky.setPosition(v.left, 0).setDisplaySize(v.width, 360);
+    for (const t of [l.far, l.mid, l.ground]) t.setX(v.left).setSize(v.width, t.height);
+    const below = v.top + v.height - (GROUND_Y + GROUND_TILE.h);
+    l.dirt.setPosition(v.left, GROUND_Y + GROUND_TILE.h).setSize(v.width, Math.max(1, below + 2));
+    l.dirt.setVisible(below > 0);
   }
 
   private changeZone(index: number) {
@@ -801,4 +876,11 @@ export class RunScene extends Phaser.Scene {
   private emit(name: string, data?: unknown) {
     this.game.events.emit(name, data);
   }
+}
+
+/** Colour of one pixel of a canvas texture (for sky top and dirt fill). */
+function pixelColour(scene: Phaser.Scene, key: string, y: number): number {
+  const src = scene.textures.get(key).getSourceImage() as HTMLCanvasElement;
+  const d = src.getContext('2d')!.getImageData(1, Math.min(y, src.height - 1), 1, 1).data;
+  return (d[0] << 16) | (d[1] << 8) | d[2];
 }

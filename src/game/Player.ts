@@ -116,6 +116,11 @@ export class Player {
     return false;
   }
 
+  /** Touch taps and swipes: the jump is no longer "held", but is not cut short either. */
+  softReleaseJump() {
+    this.jumpHeld = false;
+  }
+
   /** Let go of jump early = smaller hop. */
   releaseJump() {
     this.jumpHeld = false;

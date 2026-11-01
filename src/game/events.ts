@@ -9,6 +9,8 @@ export const EVENTS = {
   pause: 'pmi:pauseRequest',
   /** Big centre text: "Ready", "GO!". */
   announce: 'pmi:announce',
+  /** Touch input from the HTML layer (see src/ui/gestures.ts). */
+  input: 'pmi:input',
 } as const;
 
 export type HintKind = 'jump' | 'slide' | 'double' | 'power' | 'nice' | 'again' | 'done';

@@ -10,6 +10,9 @@ export interface Settings {
   slowMode: boolean;
   vibration: boolean;
   tutorialDone: boolean;
+  /** On-screen Jump/Slide buttons: auto = upright phones only. */
+  touchButtons: 'auto' | 'always' | 'never';
+  portraitTipShown: boolean;
 }
 
 export interface Stats {
@@ -47,6 +50,8 @@ export function getSettings(): Settings {
     slowMode: false,
     vibration: true,
     tutorialDone: false,
+    touchButtons: 'auto',
+    portraitTipShown: false,
   });
 }
 

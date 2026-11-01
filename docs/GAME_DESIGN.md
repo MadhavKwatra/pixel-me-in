@@ -18,12 +18,12 @@ You get "digitized" into a pixel-art world and run as far as you can. Your own f
 
 ## Controls
 
-| Action             | Keyboard           | Touch          | Gamepad        |
-| ------------------ | ------------------ | -------------- | -------------- |
-| Jump / double jump | Space, ↑, W, click | Tap right half | A / d-pad up   |
-| Short hop          | Release jump early | Release early  | Release early  |
-| Slide / fast fall  | ↓, S (hold)        | Hold left half | B / d-pad down |
-| Pause              | Esc, P             | II button      | Start          |
+| Action             | Keyboard           | Touch                                    | Gamepad        |
+| ------------------ | ------------------ | ---------------------------------------- | -------------- |
+| Jump / double jump | Space, ↑, W, click | Tap anywhere / swipe up (or Jump button) | A / d-pad up   |
+| Short hop          | Release jump early | Release early                            | Release early  |
+| Slide / fast fall  | ↓, S (hold)        | Swipe down + hold (or Slide button)      | B / d-pad down |
+| Pause              | Esc, P             | II button                                | Start          |
 
 ## Zones (`src/art/world.ts`)
 

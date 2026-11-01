@@ -4,7 +4,7 @@
  */
 import Phaser from 'phaser';
 import { BODY_FRAMES, BODY_H, BODY_W } from '../art/body';
-import { VIEW_H, VIEW_W } from '../config';
+import type { GameInput } from '../ui/gestures';
 import { EVENTS, type RunConfig } from './events';
 import { BootScene } from './scenes/BootScene';
 import { RunScene } from './scenes/RunScene';
@@ -18,12 +18,14 @@ export function ensureGame(parent: HTMLElement): Promise<void> {
     game = new Phaser.Game({
       type: Phaser.AUTO,
       parent,
-      width: VIEW_W,
-      height: VIEW_H,
+      // Full-screen canvas at the device's pixel density (sharp pixel art);
+      // RunScene picks the camera zoom for the screen shape (src/game/view.ts).
+      width: parentSize(parent).w,
+      height: parentSize(parent).h,
       backgroundColor: '#1b1f3b',
       pixelArt: true,
       roundPixels: true,
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+      scale: { mode: Phaser.Scale.NONE, zoom: 1 / dpr() },
       physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 1900 }, debug: false } },
       input: { gamepad: true, activePointers: 3 },
       audio: { noAudio: true }, // sounds come from src/audio/sfx.ts
@@ -31,8 +33,38 @@ export function ensureGame(parent: HTMLElement): Promise<void> {
       scene: [BootScene, RunScene],
     });
     game.events.once(EVENTS.ready, () => resolve());
+    // Follow the screen size (rotation, resize, browser bars).
+    let timer = 0;
+    new ResizeObserver(() => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        const { w, h } = parentSize(parent);
+        if (game && (w !== game.scale.width || h !== game.scale.height)) {
+          game.scale.setZoom(1 / dpr());
+          game.scale.resize(w, h);
+        }
+      }, 60);
+    }).observe(parent);
   });
   return ready;
+}
+
+/** Device pixels per CSS pixel, capped for speed. */
+function dpr() {
+  return Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+}
+
+function parentSize(parent: HTMLElement) {
+  const r = parent.getBoundingClientRect();
+  return {
+    w: Math.max(1, Math.round((r.width || window.innerWidth) * dpr())),
+    h: Math.max(1, Math.round((r.height || window.innerHeight) * dpr())),
+  };
+}
+
+/** Touch gestures and on-screen buttons (handled in the HTML layer) reach the game here. */
+export function sendInput(input: GameInput) {
+  game?.events.emit(EVENTS.input, input);
 }
 
 export function getGame(): Phaser.Game {

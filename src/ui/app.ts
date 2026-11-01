@@ -20,8 +20,9 @@ import { EVENTS, type GameOverData } from '../game/events';
 import { getSettings, setSettings } from '../storage/local';
 import { enterGameMode, isPortrait, isTouch, leaveGameMode } from './device';
 import { playDigitizer } from './digitizer';
-import { $ } from './dom';
+import { $, toast } from './dom';
 import { Hud } from './hud';
+import { attachTouchControls } from './touchControls';
 import { gameOverScreen } from './screens/gameOver';
 import { editorScreen } from './screens/editor';
 import { howToPlayScreen } from './screens/howToPlay';
@@ -73,6 +74,7 @@ export class App {
   }
 
   close() {
+    this.detachTouch();
     stopRun();
     this.running = false;
     this.hud.hide();
@@ -136,6 +138,9 @@ export class App {
 
     this.running = true;
     this.hud.show();
+    this.detachTouch();
+    if (isTouch()) this.detachTouch = attachTouchControls($('#game'), $('#pad'));
+    this.portraitTip();
     startRun({
       seed: (Math.random() * 2 ** 32) >>> 0,
       slowMode: settings.slowMode,
@@ -144,7 +149,18 @@ export class App {
       tutorial: !settings.tutorialDone,
       debug: this.debug,
     });
-    this.checkOrientation();
+  }
+
+  private detachTouch: () => void = () => {};
+
+  /** Upright phone: one friendly tip (once) – playing upright is fine. */
+  private portraitTip() {
+    if (!isTouch() || !isPortrait() || getSettings().portraitTipShown) return;
+    setSettings({ portraitTipShown: true });
+    setTimeout(
+      () => toast('Tip: turn your phone sideways for a bigger view.', undefined, 4000),
+      1500,
+    );
   }
 
   pause() {
@@ -156,28 +172,17 @@ export class App {
 
   resume() {
     this.go(null);
-    if (this.checkOrientation()) return;
     resumeRun();
     resumeMusic();
   }
 
   quitToMenu() {
+    this.detachTouch();
     stopRun();
     stopMusic();
     this.running = false;
     this.hud.hide();
     this.go('menu');
-  }
-
-  /** On phones held upright, cover the game and pause it. Returns true if blocked. */
-  checkOrientation(): boolean {
-    const blocked = this.running && isTouch() && isPortrait();
-    $('#rotate').classList.toggle('hidden', !blocked);
-    if (blocked) {
-      pauseRun();
-      pauseMusic();
-    }
-    return blocked;
   }
 
   private wireGameEvents() {
@@ -195,6 +200,7 @@ export class App {
     onGame(EVENTS.pause, () => this.pause());
     onGame(EVENTS.over, (d: GameOverData) => {
       this.running = false;
+      this.detachTouch();
       this.hud.hide();
       this.go('gameover', d);
     });
@@ -204,12 +210,6 @@ export class App {
     // Pause when the player leaves the tab or the window.
     document.addEventListener('visibilitychange', () => document.hidden && this.pause());
     window.addEventListener('blur', () => this.pause());
-
-    // Phone rotated: block (portrait) or let the player resume (landscape).
-    matchMedia('(orientation: portrait)').addEventListener('change', () => {
-      if (!this.running) return;
-      if (!this.checkOrientation() && this.current !== 'pause') this.pause();
-    });
 
     // Android back button / browser back: leave the game, back to the page.
     window.addEventListener('popstate', () => {
