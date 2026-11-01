@@ -2,6 +2,11 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-01 – Phaser skills for AI helpers
+
+- Copied Phaser's official agent skills (28 guides shipped in the phaser npm package, MIT) into `.claude/skills/phaser-*` with `npm run skills:phaser`. Prefixed with `phaser-` so generic names like "scenes" do not clash.
+- Searched for other game skills: no official Anthropic game skill; community options (e.g. gamedev-skills/awesome-gamedev-agent-skills: game-feel, audio-design) noted but not added.
+
 ## 2026-11-01 – v0.2 phase 4: UX/UI
 
 - Short landing page: hero with a "tablet" showing a live mini scene, one Play button, 3 steps, 3 cards.

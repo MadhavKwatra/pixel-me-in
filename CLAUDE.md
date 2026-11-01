@@ -33,7 +33,7 @@ This is a **public, open-source** repo. Never write private info (emails, accoun
 
 - TypeScript strict, ES modules, no UI framework. Prettier (single quotes, width 100).
 - Keep logic pure where possible (`geometry`, `stylize`, `rules`, `unlocks`) and unit-test it.
-- Phaser 4: the v3 API mostly works, but see `node_modules/phaser/skills/v3-to-v4-migration/SKILL.md` (e.g. no `setTintFill`).
+- Phaser 4: use the official Phaser skills in `.claude/skills/phaser-*` (copied from the phaser package by `npm run skills:phaser`; re-run after upgrading Phaser, never edit by hand). Start with `phaser-v3-to-v4-migration` – the v3 API mostly works, but e.g. `setTintFill` is gone.
 - UI text: short, plain English. Templates in `innerHTML` only contain our own text; escape anything else with `escapeHtml`.
 - Game name lives in `src/config.ts` (`GAME_NAME`), `index.html` and the PWA manifest in `vite.config.ts`.
 - Accessibility: respect `reducedMotion` (no shakes/flashes), keep keyboard + touch + gamepad working.

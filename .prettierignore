@@ -2,3 +2,4 @@ dist/
 dev-dist/
 public/mediapipe/
 package-lock.json
+.claude/skills/

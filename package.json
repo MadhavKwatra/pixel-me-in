@@ -16,7 +16,8 @@
     "e2e": "playwright test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "skills:phaser": "node scripts/sync-phaser-skills.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.1.1",
