@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+# Copied from node_modules by scripts/copy-mediapipe.mjs (postinstall)
+public/mediapipe/wasm/
+test-results/
+playwright-report/

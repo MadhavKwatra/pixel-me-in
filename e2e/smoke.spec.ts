@@ -1,0 +1,101 @@
+import { expect, test, type Page } from '@playwright/test';
+
+// Relative to the project root (where Playwright runs).
+const SAMPLE_PHOTO = 'public/og-image.png';
+
+/** Fails the test if the page talks to any other site (the privacy promise). */
+function watchNetwork(page: Page) {
+  const foreign: string[] = [];
+  const errors: string[] = [];
+  page.on('request', (r) => {
+    const u = new URL(r.url());
+    if (
+      !['localhost', ''].includes(u.hostname) &&
+      !u.protocol.startsWith('data') &&
+      !u.protocol.startsWith('blob')
+    ) {
+      foreign.push(r.url());
+    }
+  });
+  page.on('pageerror', (e) => errors.push(e.message));
+  // MediaPipe prints harmless 'INFO:' lines on the error channel; ignore those.
+  page.on(
+    'console',
+    (m) => m.type() === 'error' && !m.text().startsWith('INFO:') && errors.push(m.text()),
+  );
+  return { foreign, errors };
+}
+
+test('landing page has SEO content and a strict CSP', async ({ page }) => {
+  const net = watchNetwork(page);
+  await page.goto('/');
+  await expect(page.locator('h1')).toContainText('face');
+  await expect(page.locator('#how-to-play')).toBeVisible();
+  await expect(page.locator('#privacy')).toBeVisible();
+  const csp = await page
+    .locator('meta[http-equiv="Content-Security-Policy"]')
+    .getAttribute('content');
+  expect(csp).toContain("connect-src 'self'");
+  expect(net.foreign).toEqual([]);
+  expect(net.errors).toEqual([]);
+});
+
+test('no photo: pick a character, play, and the run starts', async ({ page, isMobile }) => {
+  const net = watchNetwork(page);
+  if (isMobile) await page.setViewportSize({ width: 915, height: 412 }); // landscape phone
+  await page.goto('/');
+  await page.getByRole('button', { name: /play now/i }).click();
+  await page.getByRole('button', { name: /no photo/i }).click();
+  await page.getByRole('button', { name: 'Character 2' }).click();
+  await expect(page.getByRole('heading', { name: 'Photo Booth' })).toBeVisible();
+  await page.getByRole('button', { name: 'Sunglasses' }).click();
+  await page.screenshot({ path: `test-results/booth-${isMobile ? 'phone' : 'desktop'}.png` });
+
+  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(2500);
+  if (!isMobile) await page.keyboard.press('Space');
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `test-results/run-${isMobile ? 'phone' : 'desktop'}.png` });
+  const metres = Number(await page.locator('[data-m]').textContent());
+  expect(metres).toBeGreaterThan(0);
+  expect(net.foreign).toEqual([]);
+  expect(net.errors).toEqual([]);
+});
+
+test('upload a photo: face finder loads locally and the crop screen opens', async ({ page }) => {
+  const net = watchNetwork(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /play now/i }).click();
+  await page.locator('input[type=file]').setInputFiles(SAMPLE_PHOTO);
+  await expect(page.getByRole('heading', { name: 'Line it up' })).toBeVisible({ timeout: 30_000 });
+  await page.screenshot({ path: 'test-results/crop.png' });
+  await page.getByRole('button', { name: 'Use this' }).click();
+  await expect(page.getByRole('heading', { name: 'Photo Booth' })).toBeVisible();
+  expect(net.foreign).toEqual([]);
+  expect(net.errors).toEqual([]);
+});
+
+test('camera: snap a photo with the fake camera', async ({ page }) => {
+  const net = watchNetwork(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: /play now/i }).click();
+  await page.getByRole('button', { name: /take a photo/i }).click();
+  const snap = page.getByRole('button', { name: 'Snap!' });
+  await expect(snap).toBeEnabled({ timeout: 10_000 });
+  await snap.click();
+  await expect(page.getByRole('heading', { name: 'Line it up' })).toBeVisible({ timeout: 30_000 });
+  expect(net.foreign).toEqual([]);
+  expect(net.errors).toEqual([]);
+});
+
+test('phone held upright: the game asks to rotate', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'phone only');
+  await page.goto('/');
+  await page.getByRole('button', { name: /play now/i }).click();
+  await page.getByRole('button', { name: /no photo/i }).click();
+  await page.getByRole('button', { name: 'Character 1' }).click();
+  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await expect(page.locator('#rotate')).toBeVisible({ timeout: 10_000 });
+  await page.screenshot({ path: 'test-results/rotate.png' });
+});
