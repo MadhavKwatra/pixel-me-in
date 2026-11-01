@@ -13,14 +13,20 @@ import {
   saveBaseFace,
   type AvatarConfig,
 } from '../../face/faceStore';
+import { cutOutHead, type HeadCutout } from '../../face/cutout';
 import {
   cropFromDetection,
+  cropFromHeadBox,
   defaultCrop,
+  defaultMeta,
+  eyeAngle,
+  metaFromLandmarks,
   pickMainFace,
   type CropTransform,
+  type FaceDetection,
 } from '../../face/geometry';
 import { drawCrop } from '../../face/normalizeFace';
-import { drawPreset, PRESETS } from '../../face/presets';
+import { drawPreset, presetMeta, PRESETS } from '../../face/presets';
 import { renderHead } from '../../face/renderAvatar';
 import { fileToCanvas, videoToCanvas } from '../../face/source';
 import type { Screen } from '../app';
@@ -154,22 +160,25 @@ export const photoScreen: Screen = (app, root) => {
     if (!source) return;
     render(
       root,
-      `<div class="panel"><h2>Finding your face…</h2><p class="note" aria-live="polite">The first time, the face finder downloads (about 13 MB). After that it works offline.</p></div>`,
+      `<div class="panel"><h2>Finding your face…</h2><p class="note" aria-live="polite">The first time, the face finder downloads (about 17 MB). After that it works offline.</p></div>`,
     );
 
     let t: CropTransform;
     let message: string;
     let debugInfo = '';
+    let face: FaceDetection | undefined;
+    let cutout: HeadCutout | null = null;
     try {
       const faces = await detectFaces(source);
-      const main = pickMainFace(faces);
-      if (main) {
-        t = cropFromDetection(main);
+      face = pickMainFace(faces);
+      if (face) {
+        cutout = await cutOutHead(source, face).catch(() => null);
+        t = cutout ? cropFromHeadBox(cutout.bbox, eyeAngle(face)) : cropFromDetection(face);
         message =
           faces.length > 1
             ? 'Found more than one face – we picked the biggest. Adjust if needed.'
             : 'Face found! Adjust if needed.';
-        debugInfo = `faces: ${faces.length}, score: ${main.score.toFixed(2)}, eyes: ${main.leftEye ? 'yes' : 'no'}`;
+        debugInfo = `faces: ${faces.length}, landmarks: ${face.landmarks?.length ?? 0}, cut-out: ${cutout ? 'yes' : 'no'}`;
       } else {
         t = defaultCrop(source.width, source.height);
         message = 'We could not find a face. Drag and zoom to place it in the circle.';
@@ -181,6 +190,7 @@ export const photoScreen: Screen = (app, root) => {
     }
     if (disposed) return;
 
+    let useCut = !!cutout;
     const baseSide = t.side;
     const baseAngle = t.angle;
     render(
@@ -188,8 +198,12 @@ export const photoScreen: Screen = (app, root) => {
       `<div class="panel">
         <h2>Line it up</h2>
         <p aria-live="polite">${message}</p>
-        <div class="crop-box" aria-label="Face crop. Drag to move."><canvas width="${FACE_SIZE}" height="${FACE_SIZE}"></canvas></div>
+        <div class="crop-row">
+          <div class="crop-box" aria-label="Face crop. Drag to move."><canvas width="${FACE_SIZE}" height="${FACE_SIZE}"></canvas></div>
+          <figure class="crop-preview"><canvas width="1" height="1" aria-label="How you will look in the game"></canvas><figcaption>In the game</figcaption></figure>
+        </div>
         <div class="stack" style="margin-top:0.75rem">
+          ${cutout ? '<label class="toggle"><span>Remove background</span><input type="checkbox" data-cut checked /></label>' : ''}
           <label class="slider">Zoom <input type="range" min="50" max="250" value="100" data-zoom /></label>
           <label class="slider">Tilt <input type="range" min="-45" max="45" value="0" data-tilt /></label>
           ${app.debug && debugInfo ? `<p class="note">debug – ${debugInfo}</p>` : ''}
@@ -204,30 +218,62 @@ export const photoScreen: Screen = (app, root) => {
 
     const box = root.querySelector<HTMLElement>('.crop-box')!;
     const out = box.querySelector('canvas')!;
+    const preview = root.querySelector<HTMLCanvasElement>('.crop-preview canvas')!;
     const zoom = root.querySelector<HTMLInputElement>('[data-zoom]')!;
     const tilt = root.querySelector<HTMLInputElement>('[data-tilt]')!;
+    const workSource = () => (useCut && cutout ? cutout.canvas : source!);
+    const currentMeta = () =>
+      face?.landmarks
+        ? metaFromLandmarks(face.landmarks, t, useCut && cutout ? cutout.bbox : null)
+        : defaultMeta();
+
     let queued = false;
     const draw = () => {
       if (queued) return;
       queued = true;
+      box.classList.toggle('cutout', useCut);
       requestAnimationFrame(() => {
         queued = false;
         if (!source) return;
-        const c = drawCrop(source, t);
+        const c = drawCrop(workSource(), t);
         const ctx = out.getContext('2d')!;
         ctx.clearRect(0, 0, FACE_SIZE, FACE_SIZE);
         ctx.drawImage(c, 0, 0);
       });
     };
-    draw();
+    // The game preview runs the full pixel filter, so only update it when the player pauses.
+    let previewTimer = 0;
+    const drawPreview = () => {
+      window.clearTimeout(previewTimer);
+      previewTimer = window.setTimeout(() => {
+        if (!source) return;
+        const head = renderHead(
+          { pixels: canvasToPixels(drawCrop(workSource(), t)), meta: currentMeta() },
+          { ...(app.avatar ?? DEFAULT_AVATAR), hat: null, faceAcc: null },
+          2,
+        );
+        preview.width = head.width;
+        preview.height = head.height;
+        preview.getContext('2d')!.drawImage(head, 0, 0);
+      }, 150);
+    };
+    const redraw = () => {
+      draw();
+      drawPreview();
+    };
+    redraw();
 
+    root.querySelector<HTMLInputElement>('[data-cut]')?.addEventListener('change', (e) => {
+      useCut = (e.target as HTMLInputElement).checked;
+      redraw();
+    });
     zoom.addEventListener('input', () => {
       t.side = (baseSide * 100) / Number(zoom.value);
-      draw();
+      redraw();
     });
     tilt.addEventListener('input', () => {
       t.angle = baseAngle + (Number(tilt.value) * Math.PI) / 180;
-      draw();
+      redraw();
     });
     box.addEventListener(
       'wheel',
@@ -255,17 +301,22 @@ export const photoScreen: Screen = (app, root) => {
       last = { x: e.clientX, y: e.clientY };
       draw();
     });
-    const end = () => (last = null);
+    const end = () => {
+      if (last) drawPreview();
+      last = null;
+    };
     box.addEventListener('pointerup', end);
     box.addEventListener('pointercancel', end);
 
     useCrop = async () => {
       if (!source) return;
-      const face = drawCrop(source, t, FACE_SIZE);
-      await saveBaseFace(await canvasToBlob(face));
-      // The full photo is no longer needed: drop it from memory.
+      const crop = drawCrop(workSource(), t, FACE_SIZE);
+      await saveBaseFace(await canvasToBlob(crop), currentMeta());
+      // The full photo (and the cut-out copy) are no longer needed: drop them from memory.
       source.width = 0;
       source = null;
+      if (cutout) cutout.canvas.width = 0;
+      cutout = null;
       const cfg = { ...base(), source: 'photo' as const };
       await saveAvatar(cfg);
       await app.refreshAvatar();
@@ -293,7 +344,11 @@ export const photoScreen: Screen = (app, root) => {
       </div>`,
     );
     root.querySelectorAll<HTMLCanvasElement>('.preset-grid canvas').forEach((c, i) => {
-      const head = renderHead(canvasToPixels(drawPreset(i)), { ...DEFAULT_AVATAR, presetId: i }, 2);
+      const head = renderHead(
+        { pixels: canvasToPixels(drawPreset(i)), meta: presetMeta() },
+        { ...DEFAULT_AVATAR, presetId: i },
+        2,
+      );
       c.width = head.width;
       c.height = head.height;
       c.getContext('2d')!.drawImage(head, 0, 0);

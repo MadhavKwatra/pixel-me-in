@@ -41,8 +41,13 @@ export function getGame(): Phaser.Game {
 }
 
 /** Put the player's avatar into the game as textures 'head' and 'body'. */
-export function setAvatarTextures(head: HTMLCanvasElement, bodySheet: HTMLCanvasElement) {
+export function setAvatarTextures(
+  head: HTMLCanvasElement,
+  bodySheet: HTMLCanvasElement,
+  headPivot: { x: number; y: number },
+) {
   const g = getGame();
+  g.registry.set('headPivot', headPivot);
   if (g.scene.isActive('run') || g.scene.isPaused('run')) g.scene.stop('run');
   for (const key of ['head', 'body']) if (g.textures.exists(key)) g.textures.remove(key);
   g.textures.addCanvas('head', head);

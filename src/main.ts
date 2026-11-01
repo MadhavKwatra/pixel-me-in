@@ -4,6 +4,7 @@
  */
 import { DEFAULT_AVATAR } from './face/faceStore';
 import { canvasToPixels } from './face/canvas';
+import { presetMeta } from './face/presets';
 import { drawPreset } from './face/presets';
 import { renderCharacter } from './face/renderAvatar';
 import { $, onActions } from './ui/dom';
@@ -15,7 +16,7 @@ setupPwa();
 {
   const hero = $<HTMLCanvasElement>('#hero-canvas');
   const ch = renderCharacter(
-    canvasToPixels(drawPreset(1)),
+    { pixels: canvasToPixels(drawPreset(1)), meta: presetMeta() },
     { ...DEFAULT_AVATAR, presetId: 1, hat: 'cap' },
     4,
   );

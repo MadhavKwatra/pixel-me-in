@@ -2,6 +2,23 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-01 – v0.2 phase 1: likeness + head cut-out
+
+**Changed**
+
+- Face Detector → **Face Landmarker** (478 points) + **selfie Image Segmenter**, both self-hosted.
+- Head cut-out: person mask, minus everything below the jawline and beside it (no neck, shoulders or background). Toggle in the crop screen.
+- Crop now fits the visible head, so the face fills the square.
+- New pixel filter: colours picked from the photo (k-means in Lab), stray-pixel cleanup, and a **feature boost** that redraws pupils, brows, mouth and nose at small sizes.
+- Pixel sizes: Retro 16 / Classic 24 / Fine 48 (Chunky removed). Default: Fine, Natural colours.
+- Hats and glasses now fit each head (placed from the saved eye/head positions).
+- Live "In the game" preview in the crop screen.
+- `scripts/likeness-gallery.mjs`: screenshots every look for a folder of test photos.
+
+**Why**
+
+- Owner feedback: only Fine looked like them; the neck and wall showed inside a circle.
+
 ## 2026-10-26 – v0.1.0, first playable
 
 **Built**

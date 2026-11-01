@@ -847,3 +847,37 @@ input[type='range'] {
 .screen-root {
   display: contents;
 }
+
+.crop-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.crop-row .crop-box {
+  margin: 0;
+}
+
+/* Cut-out mode: a checkerboard shows what is transparent; no round shade. */
+.crop-box.cutout {
+  background: repeating-conic-gradient(#3a3f66 0% 25%, #262b52 0% 50%) 0 0 / 16px 16px;
+}
+
+.crop-box.cutout::after {
+  display: none;
+}
+
+.crop-preview {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.crop-preview canvas {
+  width: 128px;
+  height: 128px;
+  background: linear-gradient(#7ec8f2, #d9f1ff);
+  border: 3px solid var(--ink);
+}

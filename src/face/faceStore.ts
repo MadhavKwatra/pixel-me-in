@@ -4,7 +4,8 @@
  * clearAllData() removes everything this game ever saved.
  */
 import { clear, createStore, del, get, set } from 'idb-keyval';
-import type { StyleOptions } from './stylize';
+import type { FaceMeta } from './geometry';
+import { PIXEL_SIZES, type StyleOptions } from './stylize';
 
 export type HatId = 'cap' | 'helmet' | 'spaceHelmet' | 'crown' | 'headphones';
 export type FaceAccId = 'sunglasses' | 'mask' | 'moustache' | 'glasses3d';
@@ -25,7 +26,7 @@ export const DEFAULT_AVATAR: AvatarConfig = {
   version: 1,
   source: 'preset',
   presetId: 0,
-  style: { style: 'pixel', pixelSize: 24, palette: 'game', outline: true },
+  style: { style: 'pixel', pixelSize: 48, palette: 'natural', outline: true },
   hat: null,
   faceAcc: null,
   outfit: 'tee',
@@ -33,17 +34,22 @@ export const DEFAULT_AVATAR: AvatarConfig = {
 
 const store = createStore('pixel-me-in', 'avatar');
 
-export async function saveBaseFace(png: Blob): Promise<void> {
+/** The face crop (PNG, transparent outside the head) + where the eyes/mouth are in it. */
+export async function saveBaseFace(png: Blob, meta: FaceMeta): Promise<void> {
   await set('baseFace', png, store);
+  await set('faceMeta', meta, store);
 }
 
-export async function loadBaseFace(): Promise<Blob | undefined> {
-  return get<Blob>('baseFace', store);
+export async function loadBaseFace(): Promise<{ png: Blob; meta?: FaceMeta } | undefined> {
+  const png = await get<Blob>('baseFace', store);
+  if (!png) return undefined;
+  return { png, meta: await get<FaceMeta>('faceMeta', store) };
 }
 
 /** Choosing a ready-made character removes the stored face crop too. */
 export async function deleteBaseFace(): Promise<void> {
   await del('baseFace', store);
+  await del('faceMeta', store);
 }
 
 export async function saveAvatar(cfg: AvatarConfig): Promise<void> {
@@ -52,7 +58,12 @@ export async function saveAvatar(cfg: AvatarConfig): Promise<void> {
 
 export async function loadAvatar(): Promise<AvatarConfig | undefined> {
   const cfg = await get<AvatarConfig>('avatar', store);
-  return cfg?.version === 1 ? { ...DEFAULT_AVATAR, ...cfg } : undefined;
+  if (cfg?.version !== 1) return undefined;
+  // Older saves used options that no longer exist (12-pixel size, "full" colours).
+  const style = { ...DEFAULT_AVATAR.style, ...cfg.style };
+  if (!PIXEL_SIZES.includes(style.pixelSize)) style.pixelSize = 16;
+  if (!['natural', 'game', 'grey', 'retro'].includes(style.palette)) style.palette = 'natural';
+  return { ...DEFAULT_AVATAR, ...cfg, style };
 }
 
 /** "Delete my data": the face, the avatar, scores and settings. */

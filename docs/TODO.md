@@ -10,7 +10,6 @@
 
 ## Next (v1.x)
 
-- [ ] Background removal for photos (MediaPipe Image Segmenter: keep hair + face only).
 - [ ] Background music (chiptune loop) with its own volume setting.
 - [ ] A pixel font (OFL licensed, self-hosted).
 - [ ] More hats and outfits (good first issues).

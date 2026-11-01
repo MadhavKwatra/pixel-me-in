@@ -65,7 +65,7 @@ describe('stylizeFace', () => {
   const base = solid(256, 256, [220, 170, 130, 255]);
 
   it('returns the requested size for every pixel size', () => {
-    for (const pixelSize of [12, 16, 24, 48] as const) {
+    for (const pixelSize of [16, 24, 48] as const) {
       const out = stylizeFace(
         base,
         { style: 'pixel', pixelSize, palette: 'game', outline: true },
@@ -79,7 +79,7 @@ describe('stylizeFace', () => {
   it('renders the original style at Photo Booth size', () => {
     const out = stylizeFace(
       base,
-      { style: 'original', pixelSize: 24, palette: 'full', outline: true },
+      { style: 'original', pixelSize: 24, palette: 'natural', outline: true },
       240,
     );
     expect(out.width).toBe(240);

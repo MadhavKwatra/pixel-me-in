@@ -17,19 +17,19 @@ Phaser 4: BootScene (builds textures from code) → RunScene (the runner)
 ```
 
 - **HTML for UI, canvas for gameplay.** Menus, forms and text are real HTML: accessible, crisp, searchable, easy to change. Only the running game is a `<canvas>`.
-- **Lazy loading.** The landing page loads ~20 KB of JS. Phaser (~375 KB gzipped) loads when the player presses Play. The MediaPipe runtime (~13 MB) loads only on the photo screen.
+- **Lazy loading.** The landing page loads ~20 KB of JS. Phaser (~375 KB gzipped) loads when the player presses Play. MediaPipe (runtime ~13 MB + face models ~4 MB) loads only on the photo screen.
 
 ## The photo pipeline (`src/face/`)
 
-| Step | File               | What happens                                                                                       |
-| ---- | ------------------ | -------------------------------------------------------------------------------------------------- |
-| 1    | `source.ts`        | File or camera frame → canvas (max 1024 px). EXIF rotation applied, EXIF data dropped.             |
-| 2    | `detectFace.ts`    | MediaPipe Face Detector (self-hosted WASM + model) → face box + eye positions.                     |
-| 3    | `geometry.ts`      | Pure math: crop transform so the eyes are level and always at the same spot. Unit-tested.          |
-| 4    | `normalizeFace.ts` | Draw the 256×256 normalized crop. The player can drag / zoom / tilt it.                            |
-| 5    | `faceStore.ts`     | Save the crop (PNG blob) + avatar settings in IndexedDB. Original photo is discarded.              |
-| 6    | `stylize.ts`       | Pure pixel filter: downsample → auto-level → palette → oval mask → outline → upscale. Unit-tested. |
-| 7    | `renderAvatar.ts`  | Head (64×64 frame, room for hats) + accessories + body → canvases for the game and Photo Booth.    |
+| Step | File                                        | What happens                                                                                                                                                  |
+| ---- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `source.ts`                                 | File or camera frame → canvas (max 1024 px). EXIF rotation applied, EXIF data dropped.                                                                        |
+| 2    | `detectFace.ts`, `cutout.ts`, `headMask.ts` | Face Landmarker (478 points) + selfie Image Segmenter (self-hosted) → head cut-out: person mask, minus everything below the jawline (no neck, no background). |
+| 3    | `geometry.ts`                               | Pure math: crop transform so the eyes are level and always at the same spot. Unit-tested.                                                                     |
+| 4    | `normalizeFace.ts`                          | Draw the 256×256 normalized crop. The player can drag / zoom / tilt it.                                                                                       |
+| 5    | `faceStore.ts`                              | Save the crop (PNG blob) + avatar settings in IndexedDB. Original photo is discarded.                                                                         |
+| 6    | `stylize.ts`                                | Pure pixel filter: downsample → auto-level → palette → oval mask → outline → upscale. Unit-tested.                                                            |
+| 7    | `renderAvatar.ts`                           | Head (64×64 frame, room for hats) + accessories + body → canvases for the game and Photo Booth.                                                               |
 
 Because every face is normalized to the same anchors (`ANCHORS` in `geometry.ts`), accessories are simple pixel drawings at fixed positions (`accessories.ts`) and fit everyone.
 

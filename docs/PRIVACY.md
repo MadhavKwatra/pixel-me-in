@@ -10,7 +10,7 @@
 
 2. **The photo is redrawn onto a canvas** (max 1024 px). This applies the phone's rotation and **drops all hidden metadata** (EXIF: GPS location, camera model, date).
 
-3. **The face is found on your device** with MediaPipe Face Detector. The model and the WASM runtime are served from this same website (`public/mediapipe/`), not from Google or a CDN.
+3. **The face is found and cut out on your device** with MediaPipe Face Landmarker (finds 478 face points: eyes, mouth, jawline) and MediaPipe Image Segmenter (finds which pixels are you, not the background). The background and your neck are removed. The models and the WASM runtime are served from this same website (`public/mediapipe/`), not from Google or a CDN.
    Code: [`src/face/detectFace.ts`](../src/face/detectFace.ts).
 
 4. **A 256×256 crop of your face is made** and you can adjust it.
@@ -26,11 +26,12 @@
 
 ## What is stored
 
-| Data                                | Where                         | How to delete             |
-| ----------------------------------- | ----------------------------- | ------------------------- |
-| 256×256 face crop                   | IndexedDB (this browser only) | Settings → Delete my data |
-| Avatar choices (style, hat, outfit) | IndexedDB                     | Settings → Delete my data |
-| Scores, settings                    | localStorage (`pmi:*`)        | Settings → Delete my data |
+| Data                                                              | Where                         | How to delete             |
+| ----------------------------------------------------------------- | ----------------------------- | ------------------------- |
+| 256×256 face crop                                                 | IndexedDB (this browser only) | Settings → Delete my data |
+| Where your eyes, brows and mouth are in that crop (a few numbers) | IndexedDB                     | Settings → Delete my data |
+| Avatar choices (style, hat, outfit)                               | IndexedDB                     | Settings → Delete my data |
+| Scores, settings                                                  | localStorage (`pmi:*`)        | Settings → Delete my data |
 
 Picking a ready-made character also deletes a saved face crop. Clearing your browser's site data removes everything too.
 

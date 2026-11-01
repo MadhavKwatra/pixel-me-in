@@ -4,13 +4,12 @@
  */
 import { sfx } from '../audio/sfx';
 import type { AvatarConfig } from '../face/faceStore';
-import { renderHead } from '../face/renderAvatar';
-import type { Pixels } from '../face/stylize';
+import { renderHead, type FaceData } from '../face/renderAvatar';
 import { flash, wait } from './dom';
 
 export async function playDigitizer(
   root: HTMLElement,
-  base: Pixels,
+  base: FaceData,
   cfg: AvatarConfig,
   reducedMotion: boolean,
 ) {
@@ -30,10 +29,10 @@ export async function playDigitizer(
 
   // From photo-like to chunky pixels, then to the player's chosen look.
   const steps: AvatarConfig['style'][] = [
-    { ...cfg.style, style: 'original', palette: 'full' },
+    { ...cfg.style, style: 'original', palette: 'natural' },
     { ...cfg.style, style: 'pixel', pixelSize: 48 },
     { ...cfg.style, style: 'pixel', pixelSize: 24 },
-    { ...cfg.style, style: 'pixel', pixelSize: 12 },
+    { ...cfg.style, style: 'pixel', pixelSize: 16 },
     cfg.style,
   ];
 

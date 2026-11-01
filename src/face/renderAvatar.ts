@@ -3,45 +3,67 @@
  * - renderHead():      the head texture used in the game (and bigger for Photo Booth)
  * - renderCharacter(): head + body, used for previews and share cards
  */
-import { BODY_H, BODY_W, drawBodySheet, NECK, type BodyFrame, BODY_FRAMES } from '../art/body';
+import { BODY_FRAMES, BODY_H, BODY_W, drawBodySheet, NECK, type BodyFrame } from '../art/body';
 import { FACE_SIZE, HEAD_SIZE } from '../config';
 import { findFaceAcc, findHat } from './accessories';
 import { canvasToPixels, ctx2d, makeCanvas, pixelsToCanvas } from './canvas';
 import { loadBaseFace, type AvatarConfig } from './faceStore';
+import { defaultMeta, type FaceMeta, type Point } from './geometry';
 import { GAME_PALETTE } from './palettes';
-import { drawPreset, presetSkin } from './presets';
+import { drawPreset, presetMeta, presetSkin } from './presets';
 import { nearestColour, stylizeFace, type Pixels } from './stylize';
 
-/** Head frame: 64x64, round head at (8,10) size 48. Extra room is for hats. */
+/** Head frame: 64x64, head drawn in the 48x48 box at (8,10). Extra room is for hats. */
 export const HEAD_FRAME = 64;
 export const HEAD_BOX = { x: 8, y: 10 };
-/** Point in the head frame that sits on the neck (bottom centre of the head, a bit up). */
-export const HEAD_PIVOT = { x: 32, y: 53 };
 
-export async function loadBasePixels(cfg: AvatarConfig): Promise<Pixels> {
+/** A face ready to draw: the 256x256 crop + where its features are. */
+export interface FaceData {
+  pixels: Pixels;
+  meta: FaceMeta;
+}
+
+export async function loadFace(cfg: AvatarConfig): Promise<FaceData> {
   if (cfg.source === 'photo') {
-    const blob = await loadBaseFace();
-    if (blob) {
-      const bmp = await createImageBitmap(blob);
+    const saved = await loadBaseFace();
+    if (saved) {
+      const bmp = await createImageBitmap(saved.png);
       const c = makeCanvas(FACE_SIZE);
       ctx2d(c).drawImage(bmp, 0, 0, FACE_SIZE, FACE_SIZE);
       bmp.close();
-      return canvasToPixels(c);
+      return { pixels: canvasToPixels(c), meta: saved.meta ?? defaultMeta() };
     }
   }
-  return canvasToPixels(drawPreset(cfg.presetId));
+  return { pixels: canvasToPixels(drawPreset(cfg.presetId)), meta: presetMeta() };
 }
 
-/** Average colour of the cheeks/nose area, snapped to a palette skin tone. Used for hands and legs. */
-export function skinTone(base: Pixels, cfg: AvatarConfig): string {
+/** A face point (0..1 in the crop) in head-frame units. */
+function toFrame(p: Point): Point {
+  return { x: HEAD_BOX.x + p.x * HEAD_SIZE, y: HEAD_BOX.y + p.y * HEAD_SIZE };
+}
+
+/** Where the head sits on the neck: just above the chin (head-frame units). */
+export function headPivot(meta: FaceMeta): Point {
+  const chin = toFrame({ x: meta.chin.x, y: Math.max(meta.chin.y, meta.bottom) });
+  return { x: Math.round(chin.x), y: Math.round(chin.y - 3) };
+}
+
+/** Average colour of the cheeks, snapped to a palette skin tone. Used for hands and legs. */
+export function skinTone(face: FaceData, cfg: AvatarConfig): string {
   if (cfg.source === 'preset') return presetSkin(cfg.presetId);
-  let r = 0,
-    g = 0,
-    b = 0,
-    n = 0;
-  for (let y = Math.floor(base.height * 0.55); y < base.height * 0.68; y++) {
-    for (let x = Math.floor(base.width * 0.38); x < base.width * 0.62; x++) {
+  const { pixels: base, meta } = face;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let n = 0;
+  const y0 = Math.floor(((meta.eyeL.y + meta.mouthL.y) / 2) * base.height);
+  const y1 = Math.ceil(meta.mouthL.y * base.height);
+  const x0 = Math.floor(meta.eyeL.x * base.width);
+  const x1 = Math.ceil(meta.eyeR.x * base.width);
+  for (let y = y0; y < y1; y++) {
+    for (let x = x0; x < x1; x++) {
       const i = (y * base.width + x) * 4;
+      if (base.data[i + 3] < 128) continue;
       r += base.data[i];
       g += base.data[i + 1];
       b += base.data[i + 2];
@@ -49,46 +71,79 @@ export function skinTone(base: Pixels, cfg: AvatarConfig): string {
     }
   }
   if (!n) return '#e7aa74';
-  const skinTones = GAME_PALETTE.slice(0, 11);
-  const [cr, cg, cb] = nearestColour(r / n, g / n, b / n, skinTones);
+  const [cr, cg, cb] = nearestColour(r / n, g / n, b / n, GAME_PALETTE.slice(0, 11));
   return `rgb(${cr}, ${cg}, ${cb})`;
 }
 
+/**
+ * Accessories are designed for a "standard" head (eyes at 25/39, y 32; head
+ * top at y 10, 48 wide). Here they are moved and scaled to fit THIS head.
+ */
+function drawAccessories(
+  ctx: CanvasRenderingContext2D,
+  cfg: AvatarConfig,
+  meta: FaceMeta,
+  scale: number,
+) {
+  const place = (
+    draw: (c: CanvasRenderingContext2D) => void,
+    s: number,
+    dx: number,
+    dy: number,
+  ) => {
+    // Drawn at 1x on its own layer (so holes in masks do not erase the face), then scaled crisply.
+    const layer = makeCanvas(HEAD_FRAME);
+    draw(ctx2d(layer));
+    const k = Math.min(1.3, Math.max(0.75, s));
+    ctx.drawImage(layer, dx * scale, dy * scale, HEAD_FRAME * k * scale, HEAD_FRAME * k * scale);
+  };
+
+  const faceAcc = findFaceAcc(cfg.faceAcc);
+  if (faceAcc) {
+    const eL = toFrame(meta.eyeL);
+    const eR = toFrame(meta.eyeR);
+    const s = Math.min(1.3, Math.max(0.75, Math.hypot(eR.x - eL.x, eR.y - eL.y) / 14));
+    const mid = { x: (eL.x + eR.x) / 2, y: (eL.y + eR.y) / 2 };
+    place(faceAcc.draw, s, mid.x - 32 * s, mid.y - 32 * s);
+  }
+  const hat = findHat(cfg.hat);
+  if (hat) {
+    const s = Math.min(1.3, Math.max(0.75, ((meta.right - meta.left) * HEAD_SIZE) / HEAD_SIZE));
+    const cx = HEAD_BOX.x + ((meta.left + meta.right) / 2) * HEAD_SIZE;
+    const top = HEAD_BOX.y + meta.top * HEAD_SIZE;
+    place(hat.draw, s, cx - 32 * s, top - 10 * s);
+  }
+}
+
 /** The head with accessories. `scale` 1 = in-game size (64x64 frame). */
-export function renderHead(base: Pixels, cfg: AvatarConfig, scale = 1): HTMLCanvasElement {
+export function renderHead(face: FaceData, cfg: AvatarConfig, scale = 1): HTMLCanvasElement {
   const out = makeCanvas(HEAD_FRAME * scale);
   const ctx = ctx2d(out);
   ctx.imageSmoothingEnabled = false;
-
-  const head = pixelsToCanvas(stylizeFace(base, cfg.style, HEAD_SIZE * scale));
+  const head = pixelsToCanvas(stylizeFace(face.pixels, cfg.style, HEAD_SIZE * scale, face.meta));
   ctx.drawImage(head, HEAD_BOX.x * scale, HEAD_BOX.y * scale);
-
-  // Accessories are drawn at 1x on their own layer (so "holes" in masks
-  // do not erase the face), then scaled up with crisp pixels.
-  const layer = makeCanvas(HEAD_FRAME);
-  const lctx = ctx2d(layer);
-  findFaceAcc(cfg.faceAcc)?.draw(lctx);
-  findHat(cfg.hat)?.draw(lctx);
-  ctx.drawImage(layer, 0, 0, HEAD_FRAME * scale, HEAD_FRAME * scale);
+  drawAccessories(ctx, cfg, face.meta, scale);
   return out;
 }
 
 /** Head + body in one picture, for menus, Photo Booth and share cards. */
 export function renderCharacter(
-  base: Pixels,
+  face: FaceData,
   cfg: AvatarConfig,
   scale: number,
   frame: BodyFrame = 'run1',
 ): HTMLCanvasElement {
-  const head = renderHead(base, cfg, scale);
-  const sheet = drawBodySheet(cfg.outfit, skinTone(base, cfg));
+  const head = renderHead(face, cfg, scale);
+  const sheet = drawBodySheet(cfg.outfit, skinTone(face, cfg));
   const neck = NECK[frame];
+  const pivot = headPivot(face.meta);
   const fi = BODY_FRAMES.indexOf(frame);
 
   // Layout in 1x units: head frame on top, body below, aligned at the neck.
-  const bodyX = HEAD_PIVOT.x - neck.x + 0;
-  const bodyY = HEAD_PIVOT.y - neck.y;
-  const w = Math.max(HEAD_FRAME, bodyX + BODY_W);
+  const bodyX = pivot.x - neck.x;
+  const bodyY = pivot.y - neck.y;
+  const left = Math.min(0, bodyX);
+  const w = Math.max(HEAD_FRAME, bodyX + BODY_W) - left;
   const h = bodyY + BODY_H;
 
   const out = makeCanvas(w * scale, h * scale);
@@ -100,11 +155,11 @@ export function renderCharacter(
     0,
     BODY_W,
     BODY_H,
-    bodyX * scale,
+    (bodyX - left) * scale,
     bodyY * scale,
     BODY_W * scale,
     BODY_H * scale,
   );
-  ctx.drawImage(head, 0, 0);
+  ctx.drawImage(head, -left * scale, 0);
   return out;
 }

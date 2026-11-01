@@ -1,11 +1,11 @@
 # Credits
 
-| What                                                                                  | License    | Link                                        |
-| ------------------------------------------------------------------------------------- | ---------- | ------------------------------------------- |
-| Phaser (game engine)                                                                  | MIT        | https://phaser.io                           |
-| MediaPipe Tasks Vision + BlazeFace short-range model (bundled in `public/mediapipe/`) | Apache-2.0 | https://ai.google.dev/edge/mediapipe        |
-| idb-keyval                                                                            | Apache-2.0 | https://github.com/jakearchibald/idb-keyval |
-| vite-plugin-pwa / Workbox                                                             | MIT        | https://vite-pwa-org.netlify.app            |
+| What                                                                                                  | License    | Link                                        |
+| ----------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------- |
+| Phaser (game engine)                                                                                  | MIT        | https://phaser.io                           |
+| MediaPipe Tasks Vision + Face Landmarker and Selfie Segmenter models (bundled in `public/mediapipe/`) | Apache-2.0 | https://ai.google.dev/edge/mediapipe        |
+| idb-keyval                                                                                            | Apache-2.0 | https://github.com/jakearchibald/idb-keyval |
+| vite-plugin-pwa / Workbox                                                                             | MIT        | https://vite-pwa-org.netlify.app            |
 
 All pixel art, icons and sound effects in this repo are made in code by the project and are covered by the project's MIT license.
 

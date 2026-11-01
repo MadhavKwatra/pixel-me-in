@@ -16,15 +16,10 @@ import type { Screen } from '../app';
 import { onActions, render } from '../dom';
 import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
 
-const SIZE_LABEL: Record<PixelSize, string> = {
-  12: 'Chunky',
-  16: 'Retro',
-  24: 'Classic',
-  48: 'Fine',
-};
+const SIZE_LABEL: Record<PixelSize, string> = { 16: 'Retro', 24: 'Classic', 48: 'Fine' };
 const PALETTE_LABEL: Record<PaletteId, string> = {
-  game: 'Game',
-  full: 'Full colour',
+  natural: 'Natural',
+  game: 'Game colours',
   grey: 'Grey',
   retro: 'Retro green',
 };

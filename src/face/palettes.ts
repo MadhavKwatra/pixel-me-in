@@ -1,6 +1,7 @@
 export type RGB = readonly [number, number, number];
 
-export type PaletteId = 'game' | 'full' | 'grey' | 'retro';
+/** natural = colours picked from your own photo (default). */
+export type PaletteId = 'natural' | 'game' | 'grey' | 'retro';
 
 function hex(h: string): RGB {
   const n = parseInt(h.replace('#', ''), 16);
@@ -75,7 +76,7 @@ export function paletteFor(id: PaletteId): RGB[] | null {
       return RETRO_PALETTE;
     case 'grey':
       return GREY_PALETTE;
-    case 'full':
+    case 'natural':
       return null;
   }
 }

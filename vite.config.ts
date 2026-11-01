@@ -75,15 +75,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,tflite}'],
-        // The MediaPipe WASM (~13 MB) is too big to precache on install.
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        // MediaPipe (WASM ~13 MB + face models ~4 MB) is too big to precache on install.
         // It is cached the first time the player opens the photo screen.
-        globIgnores: ['mediapipe/wasm/**'],
+        globIgnores: ['mediapipe/**'],
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.includes('/mediapipe/wasm/'),
+            urlPattern: ({ url }) => url.pathname.includes('/mediapipe/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'mediapipe-wasm', expiration: { maxEntries: 8 } },
+            options: { cacheName: 'mediapipe', expiration: { maxEntries: 12 } },
           },
         ],
       },

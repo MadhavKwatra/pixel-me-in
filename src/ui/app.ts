@@ -5,8 +5,7 @@
 import { setMuted, sfx, unlockAudio } from '../audio/sfx';
 import { drawBodySheet } from '../art/body';
 import { loadAvatar, type AvatarConfig } from '../face/faceStore';
-import { loadBasePixels, renderHead, skinTone } from '../face/renderAvatar';
-import type { Pixels } from '../face/stylize';
+import { headPivot, loadFace, renderHead, skinTone, type FaceData } from '../face/renderAvatar';
 import {
   ensureGame,
   onGame,
@@ -49,7 +48,7 @@ export class App {
   readonly screenEl = $('#screen');
   readonly hud = new Hud($('#hud'));
   avatar: AvatarConfig | null = null;
-  base: Pixels | null = null;
+  base: FaceData | null = null;
   debug = new URLSearchParams(location.search).has('debug');
   /** Where "Back" goes from Settings / How to play. */
   backTo: ScreenName = 'menu';
@@ -99,7 +98,7 @@ export class App {
 
   async refreshAvatar() {
     this.avatar = (await loadAvatar()) ?? null;
-    this.base = this.avatar ? await loadBasePixels(this.avatar) : null;
+    this.base = this.avatar ? await loadFace(this.avatar) : null;
   }
 
   applyMotionSetting() {
@@ -118,6 +117,7 @@ export class App {
     setAvatarTextures(
       renderHead(this.base, this.avatar, 1),
       drawBodySheet(this.avatar.outfit, skinTone(this.base, this.avatar)),
+      headPivot(this.base.meta),
     );
     this.go(null);
     await enterGameMode(this.root);

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { BODY_FRAMES, BODY_H, BODY_W, NECK, type BodyFrame } from '../art/body';
 import { GROUND_Y } from '../art/world';
-import { HEAD_FRAME, HEAD_PIVOT } from '../face/renderAvatar';
+import { HEAD_FRAME } from '../face/renderAvatar';
 
 const JUMP_V = -640;
 const DOUBLE_JUMP_V = -560;
@@ -41,9 +41,11 @@ export class Player {
     this.setHitbox(STAND);
 
     this.bodySprite = scene.add.image(x, GROUND_Y, 'body', 'run0').setOrigin(0.5, 1).setDepth(10);
+    // Where the chin sits on the neck; differs per face (set by controller.setAvatarTextures).
+    const pivot = (scene.registry.get('headPivot') as { x: number; y: number }) ?? { x: 32, y: 53 };
     this.head = scene.add
       .image(x, GROUND_Y, 'head')
-      .setOrigin(HEAD_PIVOT.x / HEAD_FRAME, HEAD_PIVOT.y / HEAD_FRAME)
+      .setOrigin(pivot.x / HEAD_FRAME, pivot.y / HEAD_FRAME)
       .setDepth(11);
   }
 

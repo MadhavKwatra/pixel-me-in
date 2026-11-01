@@ -40,7 +40,7 @@ The camera needs HTTPS or `localhost`.
 
 ## Tech
 
-[Phaser 4](https://phaser.io) (game engine) · TypeScript · [Vite](https://vite.dev) · [MediaPipe Face Detector](https://ai.google.dev/edge/mediapipe/solutions/vision/face_detector) (self-hosted) · [idb-keyval](https://github.com/jakearchibald/idb-keyval) · [vite-plugin-pwa](https://vite-pwa-org.netlify.app/)
+[Phaser 4](https://phaser.io) (game engine) · TypeScript · [Vite](https://vite.dev) · [MediaPipe Face Landmarker + Image Segmenter](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) (self-hosted) · [idb-keyval](https://github.com/jakearchibald/idb-keyval) · [vite-plugin-pwa](https://vite-pwa-org.netlify.app/)
 
 All art and sounds are drawn/synthesized in code – no asset files to download.
 

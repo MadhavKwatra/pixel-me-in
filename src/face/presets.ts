@@ -5,7 +5,7 @@
  */
 import { FACE_SIZE } from '../config';
 import { ctx2d, makeCanvas } from './canvas';
-import { ANCHORS } from './geometry';
+import { ANCHORS, defaultMeta, type FaceMeta } from './geometry';
 
 interface Preset {
   skin: string;
@@ -83,4 +83,9 @@ export function drawPreset(index: number): HTMLCanvasElement {
 
 export function presetSkin(index: number): string {
   return PRESETS[index % PRESETS.length].skin;
+}
+
+/** Ready-made faces are drawn with no background, so they count as "cut out". */
+export function presetMeta(): FaceMeta {
+  return { ...defaultMeta(), top: 0.13, left: 0.15, right: 0.85, bottom: 0.91, cut: true };
 }

@@ -6,14 +6,13 @@ import { GROUND_TILE, LAYER_SIZE, paint, ZONES } from '../art/world';
 import { GAME_NAME } from '../config';
 import type { AvatarConfig } from '../face/faceStore';
 import { canvasToBlob } from '../face/canvas';
-import { renderCharacter } from '../face/renderAvatar';
-import type { Pixels } from '../face/stylize';
+import { renderCharacter, type FaceData } from '../face/renderAvatar';
 import { formatNumber } from './dom';
 
 const SIZE = 720;
 
 export function makeCard(
-  base: Pixels,
+  base: FaceData,
   cfg: AvatarConfig,
   score?: { metres: number; gears: number },
 ): HTMLCanvasElement {
