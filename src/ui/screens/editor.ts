@@ -9,14 +9,13 @@ import { saveAvatar, type AvatarConfig, type OutfitId } from '../../face/faceSto
 import type { PaletteId } from '../../face/palettes';
 import { PRESETS } from '../../face/presets';
 import { renderCharacter } from '../../face/renderAvatar';
-import { PIXEL_SIZES, type PixelSize } from '../../face/stylize';
+import type { FaceStyle } from '../../face/stylize';
 import { getStats } from '../../storage/local';
 import { isUnlocked, unlockHint } from '../../storage/unlocks';
 import type { Screen } from '../app';
 import { onActions, render } from '../dom';
 import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
 
-const SIZE_LABEL: Record<PixelSize, string> = { 16: 'Retro', 24: 'Classic', 48: 'Fine' };
 const PALETTE_LABEL: Record<PaletteId, string> = {
   natural: 'Natural',
   game: 'Game colours',
@@ -89,16 +88,10 @@ export const editorScreen: Screen = (app, root) => {
               'style',
               [
                 { value: 'pixel', label: 'Pixel' },
+                { value: 'cartoon', label: 'Cartoon' },
                 { value: 'original', label: 'Photo' },
               ],
               s.style,
-            )}
-            ${group(
-              'Pixel size',
-              'pixelSize',
-              PIXEL_SIZES.map((p) => ({ value: String(p), label: SIZE_LABEL[p] })),
-              String(s.pixelSize),
-              s.style !== 'pixel',
             )}
             ${group(
               'Colours',
@@ -160,10 +153,7 @@ export const editorScreen: Screen = (app, root) => {
     const cfg: AvatarConfig = { ...app.avatar!, style: { ...app.avatar!.style } };
     switch (field) {
       case 'style':
-        cfg.style.style = value as 'pixel' | 'original';
-        break;
-      case 'pixelSize':
-        cfg.style.pixelSize = Number(value) as PixelSize;
+        cfg.style.style = value as FaceStyle;
         break;
       case 'palette':
         cfg.style.palette = value as PaletteId;

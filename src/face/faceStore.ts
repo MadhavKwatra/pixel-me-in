@@ -5,7 +5,7 @@
  */
 import { clear, createStore, del, get, set } from 'idb-keyval';
 import type { FaceMeta } from './geometry';
-import { PIXEL_SIZES, type StyleOptions } from './stylize';
+import type { StyleOptions } from './stylize';
 
 export type HatId = 'cap' | 'helmet' | 'spaceHelmet' | 'crown' | 'headphones';
 export type FaceAccId = 'sunglasses' | 'mask' | 'moustache' | 'glasses3d';
@@ -59,9 +59,9 @@ export async function saveAvatar(cfg: AvatarConfig): Promise<void> {
 export async function loadAvatar(): Promise<AvatarConfig | undefined> {
   const cfg = await get<AvatarConfig>('avatar', store);
   if (cfg?.version !== 1) return undefined;
-  // Older saves used options that no longer exist (12-pixel size, "full" colours).
-  const style = { ...DEFAULT_AVATAR.style, ...cfg.style };
-  if (!PIXEL_SIZES.includes(style.pixelSize)) style.pixelSize = 16;
+  // Older saves used options that no longer exist (small pixel sizes, "full" colours).
+  // Faces only stay recognizable at 48 pixels, so the player no longer picks a size.
+  const style = { ...DEFAULT_AVATAR.style, ...cfg.style, pixelSize: 48 as const };
   if (!['natural', 'game', 'grey', 'retro'].includes(style.palette)) style.palette = 'natural';
   return { ...DEFAULT_AVATAR, ...cfg, style };
 }

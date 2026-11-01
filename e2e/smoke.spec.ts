@@ -99,3 +99,21 @@ test('phone held upright: the game asks to rotate', async ({ page, isMobile }) =
   await expect(page.locator('#rotate')).toBeVisible({ timeout: 10_000 });
   await page.screenshot({ path: 'test-results/rotate.png' });
 });
+
+test('pause: button, Esc and P all open the pause screen', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'keyboard test');
+  await page.goto('/');
+  await page.getByRole('button', { name: /play now/i }).click();
+  await page.getByRole('button', { name: /no photo/i }).click();
+  await page.getByRole('button', { name: 'Character 1' }).click();
+  await page.getByRole('button', { name: /▶ Play/ }).click();
+  await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(1500);
+  for (const how of ['button', 'Escape', 'p']) {
+    if (how === 'button') await page.getByRole('button', { name: 'Pause' }).click();
+    else await page.keyboard.press(how);
+    await expect(page.getByRole('heading', { name: 'Paused' })).toBeVisible();
+    await page.getByRole('button', { name: /Resume/ }).click();
+    await page.waitForTimeout(400);
+  }
+});

@@ -13,9 +13,14 @@ export interface Pixels {
   data: Uint8ClampedArray;
 }
 
-export type FaceStyle = 'pixel' | 'original';
+/** pixel = 48-pixel art, cartoon = flat colours + ink lines, original = the photo itself. */
+export type FaceStyle = 'pixel' | 'cartoon' | 'original';
 
-/** Cells across the head. Each must divide HEAD_SIZE (48). */
+/**
+ * Cells across the head. Each must divide HEAD_SIZE (48). Players always get 48
+ * (smaller faces stop looking like the person); 16/24 are only used by the
+ * "digitizer" intro animation.
+ */
 export const PIXEL_SIZES = [16, 24, 48] as const;
 export type PixelSize = (typeof PIXEL_SIZES)[number];
 
@@ -448,6 +453,74 @@ function mix(a: RGB | Point, b: RGB | Point): RGB | Point {
   return { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 };
 }
 
+const HEAD_CELLS = 48;
+
+/** 3x3 median per channel: removes skin texture and noise, keeps edges. */
+export function medianFilter(img: Pixels): Pixels {
+  const out = createPixels(img.width, img.height);
+  out.data.set(img.data);
+  const W = img.width;
+  const H = img.height;
+  const vals: number[][] = [[], [], []];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4;
+      if (img.data[o + 3] < 128) continue;
+      vals[0].length = vals[1].length = vals[2].length = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx;
+          const yy = y + dy;
+          if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+          const i = (yy * W + xx) * 4;
+          if (img.data[i + 3] < 128) continue;
+          for (let c = 0; c < 3; c++) vals[c].push(img.data[i + c]);
+        }
+      }
+      for (let c = 0; c < 3; c++) {
+        vals[c].sort((a, b) => a - b);
+        out.data[o + c] = vals[c][vals[c].length >> 1];
+      }
+    }
+  }
+  return out;
+}
+
+/** Cartoon ink: where two flat colours meet with a big brightness jump, darken the darker side. */
+export function inkLines(img: Pixels, jump = 45): Pixels {
+  const out = createPixels(img.width, img.height);
+  out.data.set(img.data);
+  const W = img.width;
+  const lumAt = (i: number) => luma(img.data[i], img.data[i + 1], img.data[i + 2]);
+  for (let y = 0; y < img.height; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (img.data[i + 3] < 128) continue;
+      const l = lumAt(i);
+      let edge = false;
+      for (const [dx, dy] of [
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+        [0, -1],
+      ]) {
+        const xx = x + dx;
+        const yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= W || yy >= img.height) continue;
+        const j = (yy * W + xx) * 4;
+        if (img.data[j + 3] < 128) continue;
+        if (lumAt(j) - l > jump) edge = true;
+      }
+      if (edge) {
+        out.data[i] = img.data[i] * 0.45;
+        out.data[i + 1] = img.data[i + 1] * 0.4;
+        out.data[i + 2] = img.data[i + 2] * 0.45;
+      }
+    }
+  }
+  return out;
+}
+
 /** How many colours each pixel size gets. Fewer colours = cleaner pixel art. */
 const COLOURS_FOR: Record<PixelSize, number> = { 16: 8, 24: 10, 48: 14 };
 
@@ -465,6 +538,25 @@ export function stylizeFace(
 ): Pixels {
   const ramp =
     opts.palette === 'grey' || opts.palette === 'retro' ? paletteFor(opts.palette) : null;
+
+  if (opts.style === 'cartoon') {
+    const inset = opts.outline ? 1 : 0;
+    let img = placeInside(downsample(base, HEAD_CELLS - 2 * inset), HEAD_CELLS, inset);
+    img = hardAlpha(img);
+    if (!meta.cut) img = ovalMask(img, inset);
+    img = autoLevel(img);
+    img = medianFilter(img);
+    let pal = kmeansPalette(opaqueColours(img), 9);
+    if (opts.palette === 'game')
+      pal = pal.map((c) => nearestColour(c[0], c[1], c[2], GAME_PALETTE));
+    img = quantize(img, pal);
+    img = cleanSpeckles(img);
+    img = inkLines(img, 60);
+    img = boostFeatures(img, base, meta, pal, inset);
+    if (ramp) img = mapByLuma(img, ramp);
+    if (opts.outline) img = outline(img, 1);
+    return upscaleNearest(img, outSize / HEAD_CELLS);
+  }
 
   if (opts.style === 'pixel') {
     const cells: PixelSize = PIXEL_SIZES.includes(opts.pixelSize) ? opts.pixelSize : 48;

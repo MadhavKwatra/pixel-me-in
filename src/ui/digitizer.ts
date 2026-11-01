@@ -30,9 +30,9 @@ export async function playDigitizer(
   // From photo-like to chunky pixels, then to the player's chosen look.
   const steps: AvatarConfig['style'][] = [
     { ...cfg.style, style: 'original', palette: 'natural' },
-    { ...cfg.style, style: 'pixel', pixelSize: 48 },
-    { ...cfg.style, style: 'pixel', pixelSize: 24 },
     { ...cfg.style, style: 'pixel', pixelSize: 16 },
+    { ...cfg.style, style: 'pixel', pixelSize: 24 },
+    { ...cfg.style, style: 'pixel', pixelSize: 48 },
     cfg.style,
   ];
 

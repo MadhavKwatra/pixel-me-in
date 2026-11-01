@@ -1,5 +1,5 @@
-// Dev tool: upload each photo in a folder and screenshot the result at every
-// pixel size, to judge likeness quickly. Needs the dev server running.
+// Dev tool: upload each photo in a folder and screenshot the result in every
+// look, to judge likeness quickly. Needs the dev server running.
 //   node scripts/likeness-gallery.mjs [photoDir] [baseUrl]
 // Output: test-results/gallery/<photo>-<size>.png
 import { chromium } from '@playwright/test';
@@ -26,24 +26,19 @@ for (const photo of photos) {
   await page.locator('.crop-row').screenshot({ path: `${out}/${name}-crop.png` });
   await page.getByRole('button', { name: 'Use this' }).click();
   await page.getByRole('heading', { name: 'Photo Booth' }).waitFor();
-  for (const size of ['Retro', 'Classic', 'Fine']) {
-    await page.getByRole('button', { name: size, exact: true }).click();
+  for (const look of ['Pixel', 'Cartoon', 'Photo']) {
+    await page.getByRole('button', { name: look, exact: true }).click();
     await page.waitForTimeout(400);
     await page
       .locator('.stage canvas')
-      .screenshot({ animations: 'disabled', path: `${out}/${name}-${size.toLowerCase()}.png` });
+      .screenshot({ animations: 'disabled', path: `${out}/${name}-${look.toLowerCase()}.png` });
   }
-  await page.getByRole('button', { name: 'Photo', exact: true }).click();
-  await page.waitForTimeout(400);
-  await page
-    .locator('.stage canvas')
-    .screenshot({ animations: 'disabled', path: `${out}/${name}-photo.png` });
   console.log(`done ${name}`);
   await page.close();
 }
 
 // One overview picture: a row per photo, a column per look.
-const cols = ['crop', 'retro', 'classic', 'fine', 'photo'];
+const cols = ['crop', 'pixel', 'cartoon', 'photo'];
 const rows = photos
   .map((p) => p.replace(/\.\w+$/, ''))
   .map(

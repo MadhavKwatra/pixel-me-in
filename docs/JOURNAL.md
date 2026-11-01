@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-01 – v0.2 phase 1b: fewer, better looks
+
+- Owner test: only Fine (48 px) looked like them. Faces at 16–24 px lose identity, so the size picker is gone.
+- Looks: **Pixel** (48 px), **Cartoon** (new: smoothed, 9 flat colours, ink lines, feature boost), **Photo**.
+- Pause: could not reproduce "no pause screen" (button, Esc and P all work); added an e2e test. The VS Code browser may keep Esc for itself.
+
 ## 2026-11-01 – v0.2 phase 1: likeness + head cut-out
 
 **Changed**
