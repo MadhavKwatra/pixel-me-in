@@ -4,6 +4,7 @@
   "private": true,
   "description": "Put your face in a 2D pixel-art runner. Your photo never leaves your device.",
   "license": "MIT",
+  "author": "Madhav Kwatra (https://madhavkwatra.in)",
   "type": "module",
   "scripts": {
     "postinstall": "node scripts/copy-mediapipe.mjs",

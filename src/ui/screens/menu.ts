@@ -1,4 +1,5 @@
 import { GAME_NAME } from '../../config';
+import { CREATOR } from '../../creator';
 import { renderCharacter } from '../../face/renderAvatar';
 import { getStats } from '../../storage/local';
 import type { Screen } from '../app';
@@ -38,6 +39,7 @@ export const menuScreen: Screen = (app, root) => {
         </div>
       </div>
       <p class="note center">Best: ${formatNumber(stats.best)} m · Gears: ${formatNumber(stats.totalGears)} · Runs: ${stats.runs}${app.debug ? ' · DEBUG ON' : ''}</p>
+      <p class="note center">Made by <a href="${CREATOR.portfolio}" target="_blank" rel="noopener">${CREATOR.name}</a></p>
     </div>`,
   );
 

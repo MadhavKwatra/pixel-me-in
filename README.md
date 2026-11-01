@@ -57,6 +57,10 @@ All art and sounds are drawn/synthesized in code – no asset files to download.
 
 A fan-made, open-source game inspired by the _Phineas and Ferb_ episode "Gaming the System" (season 2, 2009), where the boys build a video game and zap themselves into it. Not affiliated with or endorsed by Disney. No characters, names or art from the show are used.
 
+## Author
+
+Made by **Madhav Kwatra** – [portfolio](https://madhavkwatra.in) · [GitHub](https://github.com/MadhavKwatra) · [LinkedIn](https://www.linkedin.com/in/madhav-kwatra/) · [X](https://x.com/madhav_kwatra)
+
 ## License
 
 Code: [MIT](LICENSE). Third-party credits: [CREDITS.md](CREDITS.md).
