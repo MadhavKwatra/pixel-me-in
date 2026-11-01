@@ -111,7 +111,8 @@ function drawAccessories(
     const s = Math.min(1.3, Math.max(0.75, ((meta.right - meta.left) * HEAD_SIZE) / HEAD_SIZE));
     const cx = HEAD_BOX.x + ((meta.left + meta.right) / 2) * HEAD_SIZE;
     const top = HEAD_BOX.y + meta.top * HEAD_SIZE;
-    place(hat.draw, s, cx - 32 * s, top - 10 * s);
+    // Sit a little into the hair, not on top of it.
+    place(hat.draw, s, cx - 32 * s, top - 6 * s);
   }
 }
 
