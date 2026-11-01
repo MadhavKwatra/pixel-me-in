@@ -8,7 +8,7 @@ import type { Screen } from '../app';
 import { wireFeedback } from '../feedback';
 import { isTouch } from '../device';
 import { formatNumber, onActions, render } from '../dom';
-import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
+import { openShareSheet } from '../shareSheet';
 
 const NAMES: Record<string, string> = {
   ...Object.fromEntries(HATS.map((h) => [h.id, h.label])),
@@ -20,6 +20,7 @@ export const gameOverScreen: Screen = (app, root, arg) => {
   const d = arg as GameOverData;
   const before = getStats();
   const { stats, newBest } = recordRun(d.metres, d.gears);
+  const friend = Number(sessionStorage.getItem('pmi:beat')) || 0;
   const unlocked = Object.keys(UNLOCK_RULES).filter(
     (id) => !isUnlocked(id, before) && isUnlocked(id, stats),
   );
@@ -30,12 +31,12 @@ export const gameOverScreen: Screen = (app, root, arg) => {
       <h2>Zapped out!</h2>
       <p style="font-size:1.6rem;margin:0.2rem 0"><strong>${formatNumber(d.metres)} m</strong></p>
       <p>${newBest ? '🏆 New best!' : `Best: ${formatNumber(stats.best)} m`} · ⚙ ${d.gears} gears</p>
+      ${friend ? `<p class="challenge-result">${d.metres > friend ? `🎉 You beat your friend's ${formatNumber(friend)} m!` : `Your friend ran ${formatNumber(friend)} m – ${formatNumber(friend - d.metres + 1)} m to go!`}</p>` : ''}
       ${unlocked.length ? `<p role="status">🔓 Unlocked in the Photo Booth: <strong>${unlocked.map((id) => NAMES[id] ?? id).join(', ')}</strong></p>` : ''}
       <div class="stack">
         <button class="btn btn-big" data-action="again" autofocus>Run again</button>
         <div class="row center">
-          <button class="btn" data-action="download">Save score card</button>
-          ${canShareFiles() ? '<button class="btn btn-teal" data-action="share">Share</button>' : ''}
+          <button class="btn btn-teal" data-action="share">Challenge friends</button>
         </div>
         <div class="row center">
           <button class="btn btn-ghost" data-action="booth">Photo Booth</button>
@@ -48,11 +49,9 @@ export const gameOverScreen: Screen = (app, root, arg) => {
   );
 
   wireFeedback(root);
-  const card = () => makeCard(app.base!, app.avatar!, d);
   onActions(root, {
     again: () => void app.play(),
-    download: () => void downloadCard(card()),
-    share: () => void shareCard(card(), `I ran ${formatNumber(d.metres)} m in Pixel Me In!`),
+    share: () => openShareSheet(root, app.base!, app.avatar!, d),
     booth: () => app.go('editor'),
     menu: () => app.quitToMenu(),
   });

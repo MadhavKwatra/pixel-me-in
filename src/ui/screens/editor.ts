@@ -14,7 +14,7 @@ import { getSettings, getStats } from '../../storage/local';
 import { isUnlocked, unlockHint } from '../../storage/unlocks';
 import type { Screen } from '../app';
 import { escapeHtml, onActions, render } from '../dom';
-import { canShareFiles, downloadCard, makeCard, shareCard } from '../shareCard';
+import { openShareSheet } from '../shareSheet';
 
 type Tab = 'look' | 'hat' | 'face' | 'outfit' | 'character';
 
@@ -187,8 +187,7 @@ export const editorScreen: Screen = (app, root) => {
           <div class="stack">
             <div class="stage"><canvas width="1" height="1" aria-label="Your character"></canvas></div>
             <div class="row center desktop-only">
-              <button class="btn" data-action="download">Save picture</button>
-              ${canShareFiles() ? '<button class="btn btn-teal" data-action="share">Share</button>' : ''}
+              <button class="btn btn-teal" data-action="share">Share / save picture</button>
             </div>
           </div>
           <div class="stack">
@@ -231,7 +230,7 @@ export const editorScreen: Screen = (app, root) => {
           </div>
         </div>
         <div class="row center booth-actions">
-          <button class="btn mobile-only" data-action="download">Save</button>
+          <button class="btn btn-teal mobile-only" data-action="share">Share</button>
           <button class="btn btn-big" data-action="play">Play</button>
           <button class="btn btn-ghost" data-action="newPhoto">${cfg.source === 'photo' ? 'New photo' : 'Use photo'}</button>
           <button class="btn btn-ghost" data-action="menu">Menu</button>
@@ -319,8 +318,7 @@ export const editorScreen: Screen = (app, root) => {
       root.querySelector<HTMLElement>(`[data-tab="${tab}"]`)?.focus();
     },
     set: (el) => void set(el.dataset.field!, el.dataset.value!),
-    download: () => void downloadCard(makeCard(app.base!, app.avatar!)),
-    share: () => void shareCard(makeCard(app.base!, app.avatar!), 'Me, pixelated!'),
+    share: () => openShareSheet(root, app.base!, app.avatar!),
     play: () => void app.play(),
     newPhoto: () => app.go('photo'),
     menu: () => app.go('menu'),

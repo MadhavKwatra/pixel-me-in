@@ -2,6 +2,13 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part F: share to socials
+
+- Share sheet (`src/ui/shareSheet.ts`) on game over ("Challenge friends") and in the Photo Booth: phone share menu with the picture (Instagram, WhatsApp, Snapchat …), X, Threads, WhatsApp, Facebook, LinkedIn, Copy link, and "Save the picture" in story (1080×1920) or square size.
+- Share cards (`src/ui/shareCard.ts`) use the pixel font, show the score + "Can you beat me?" and the game link.
+- Challenge links: `?beat=1234` → landing shows "Your friend ran 1,234 m. Can you beat it?"; game over compares your run with your friend's.
+- Only links – the game sends nothing. `scripts/share-check.mjs` screenshots the sheet and saves both cards.
+
 ## 2026-11-02 – v0.3 part C: the robot
 
 - New robot sprite (`src/art/robot.ts`, shared helpers in `src/art/pixelGrid.ts`): 8-frame stomp, swinging arms, shoulder pads, scanning eye, blinking antenna, pulsing chest light, hazard stripe; laser, throw and zapped poses.

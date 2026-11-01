@@ -6,9 +6,10 @@
 - [x] Pages: phone menu, current page in the nav, footer with icons that stays at the bottom, sticky "Play now" bar on phones.
 - [x] Feedback & contact: socials, share the game; `FEEDBACK_URL` and `REPO_URL` in `src/creator.ts`.
 - [ ] Create a free feedback form (Tally or Google Forms) and put its link in `FEEDBACK_URL`.
-- [ ] Touch: tap / swipe gestures, optional control pad, full-screen portrait play.
-- [ ] Robot: new animation; "Robot Rush" attacks; two designs to compare (stumble + catch-up / attacks only).
-- [ ] Share to socials: story image (9:16), X / Threads / WhatsApp / Facebook / LinkedIn, challenge links.
+- [x] Touch: tap / swipe gestures, optional control pad, full-screen portrait play.
+- [x] Robot: new animation; "Robot Rush" attacks; two designs to compare (stumble + catch-up / attacks only).
+- [ ] Owner: play both robot designs and pick one (Settings → Robot (test)); then remove the switch.
+- [x] Share to socials: story image (9:16), X / Threads / WhatsApp / Facebook / LinkedIn, challenge links.
 - [ ] Creator character on the landing page (from the owner's photo; owner picks the look).
 - [ ] Promo videos (landscape 16:9 + vertical 9:16).
 

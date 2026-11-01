@@ -51,5 +51,16 @@ onActions($('#landing'), {
   install: () => void promptInstall(),
 });
 
+// Challenge link from a friend: ?beat=1234 (just a number in the link; nothing is sent).
+{
+  const beat = Math.floor(Number(new URLSearchParams(location.search).get('beat')));
+  const el = document.querySelector<HTMLElement>('.challenge');
+  if (el && beat > 0 && beat < 1_000_000) {
+    sessionStorage.setItem('pmi:beat', String(beat));
+    el.textContent = `Your friend ran ${beat.toLocaleString('en-US')} m. Can you beat it?`;
+    el.classList.remove('hidden');
+  }
+}
+
 // Deep link: /?play opens the game directly (used by the "Play" link on every page and the portfolio).
 if (new URLSearchParams(location.search).has('play')) void openApp();
