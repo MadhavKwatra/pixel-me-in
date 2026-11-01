@@ -102,6 +102,7 @@ export class RunScene extends Phaser.Scene {
     endAt: number;
   } | null = null;
   private marks: { mark: Phaser.GameObjects.Image; landAt: number }[] = [];
+  private autopilotUntil = 0;
   private dustAt = 0;
   private lineAt = 0;
 
@@ -137,6 +138,7 @@ export class RunScene extends Phaser.Scene {
     this.robotPoseUntil = 0;
     this.laser = null;
     this.marks = [];
+    this.autopilotUntil = 0;
     this.over = false;
     this.started = false;
     this.lessons = cfg.tutorial ? [...TUTORIAL] : [];
@@ -221,6 +223,7 @@ export class RunScene extends Phaser.Scene {
       sfx.go();
       this.player.frozen = false;
       this.started = true;
+      if (this.cfg.autopilotMs) this.autopilotUntil = this.time.now + this.cfg.autopilotMs;
       playZoneMusic(0);
       this.emit(EVENTS.zone, { index: 0, name: ZONES[0].name });
     });
@@ -275,6 +278,29 @@ export class RunScene extends Phaser.Scene {
         this.player.releaseSlide();
         break;
     }
+  }
+
+  /**
+   * Demo/video only (`?demo&autopilot=…`): a simple bot that jumps over low
+   * things, slides under high things and the laser. Never on for players.
+   */
+  private autopilot(time: number) {
+    const px = this.player.box.x;
+    let slide = !!this.laser && time > this.laser.fireAt - 300;
+    for (const o of this.obstacles.getChildren() as ArcadeSprite[]) {
+      if (!o.active) continue;
+      const dx = o.x - o.displayWidth / 2 - px;
+      if (dx < -10 || dx > 130) continue;
+      const high = o.y + o.displayHeight / 2 < GROUND_Y - 30;
+      if (high && dx < 90) slide = true;
+      if (!high && dx < 95 && !o.getData('ap')) {
+        o.setData('ap', true);
+        this.player.pressJump(time);
+        this.player.softReleaseJump();
+      }
+    }
+    if (slide && !this.player.isSliding) this.doSlide();
+    if (!slide && this.player.isSliding) this.player.releaseSlide();
   }
 
   // ---------------------------------------------------------------- view
@@ -388,6 +414,7 @@ export class RunScene extends Phaser.Scene {
       this.updatePower(time);
       this.updateTutorial();
       this.updateEffects(time);
+      if (time < this.autopilotUntil) this.autopilot(time);
     }
     this.pollGamepad();
 

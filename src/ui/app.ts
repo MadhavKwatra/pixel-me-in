@@ -129,7 +129,8 @@ export class App {
       headPivot(this.base.meta),
     );
     this.go(null);
-    await enterGameMode(this.root);
+    // Demo recordings stay in the page (headless fullscreen would use a different screen size).
+    if (!new URLSearchParams(location.search).has('demo')) await enterGameMode(this.root);
 
     if (!this.introShown) {
       this.introShown = true;
@@ -150,20 +151,33 @@ export class App {
       debug: this.debug,
       robotMode: settings.robotMode,
       startAt: this.startAt(),
+      autopilotMs: this.autopilotMs(),
     });
   }
 
   private detachTouch: () => void = () => {};
 
-  /** Debug view only: `?debug&start=380` starts near the end of zone 1 (robot testing). */
+  /**
+   * Dev only: `?debug&start=380` starts near the end of zone 1 (robot testing).
+   * `?demo&start=…&autopilot=14` is the same without hitboxes, and the game plays
+   * itself for 14 s (used to record promo videos).
+   */
   private startAt(): number | undefined {
-    const n = Number(new URLSearchParams(location.search).get('start'));
-    return this.debug && n > 0 ? n : undefined;
+    const q = new URLSearchParams(location.search);
+    const n = Number(q.get('start'));
+    return (this.debug || q.has('demo')) && n > 0 ? n : undefined;
+  }
+
+  private autopilotMs(): number | undefined {
+    const q = new URLSearchParams(location.search);
+    const s = Number(q.get('autopilot'));
+    return q.has('demo') && s > 0 ? s * 1000 : undefined;
   }
 
   /** Upright phone: one friendly tip (once) – playing upright is fine. */
   private portraitTip() {
     if (!isTouch() || !isPortrait() || getSettings().portraitTipShown) return;
+    if (new URLSearchParams(location.search).has('demo')) return;
     setSettings({ portraitTipShown: true });
     setTimeout(
       () => toast('Tip: turn your phone sideways for a bigger view.', undefined, 4000),

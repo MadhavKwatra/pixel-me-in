@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – v0.3 part G: promo videos
+
+- `scripts/promo-video.mjs` records the real game with captions: landing → photo → cut-out → Photo Booth looks → run → Robot Rush → pixel crash → share sheet → end card. Landscape 1280×720 and vertical 1080×1920 (recorded at 540×960, scaled ×2 with crisp pixels), converted to MP4 with ffmpeg. Output in `promo/videos/` (git-ignored: it shows the owner's face).
+- Demo mode for recordings: `?demo&start=372&autopilot=15` – starts near the first Robot Rush, a simple autopilot dodges for 15 s, no fullscreen, no tips. Never on for players.
+- No sound in the videos (browser recordings are silent) – add music in a video editor if wanted.
+
 ## 2026-11-02 – v0.3 part D: the maker on the landing page
 
 - `scripts/creator-variants.mjs` renders 8 looks from the owner's local photo (never committed); the owner picked "Pixel · T-shirt".

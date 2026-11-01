@@ -12,7 +12,8 @@
 - [x] Share to socials: story image (9:16), X / Threads / WhatsApp / Facebook / LinkedIn, challenge links.
 - [x] Creator character on the landing page (from the owner's photo; owner picked "Pixel · T-shirt").
 - [ ] Use the creator character in the social preview image (`og-image.png`) once the domain is set.
-- [ ] Promo videos (landscape 16:9 + vertical 9:16).
+- [x] Promo videos (landscape 16:9 + vertical 9:16): `node scripts/promo-video.mjs` → `promo/videos/`.
+- [ ] Owner: add music/voice-over to the videos in an editor if wanted (recordings are silent).
 
 ## Before launch
 

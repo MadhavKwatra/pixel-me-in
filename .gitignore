@@ -12,3 +12,5 @@ public/mediapipe/wasm/
 test-results/
 playwright-report/
 e2e/local-faces/
+# Promo videos/images (contain the owner's face) – never committed
+promo/
