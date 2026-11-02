@@ -149,7 +149,6 @@ export class App {
       vibration: settings.vibration,
       tutorial: !settings.tutorialDone && !this.startAt(),
       debug: this.debug,
-      robotMode: settings.robotMode,
       startAt: this.startAt(),
       autopilotMs: this.autopilotMs(),
     });

@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – Stumble is final; video fixes
+
+- Owner picked **Stumble + catch-up**; the "Attacks only" design and the Settings test switch are removed.
+- After a stumble the character blinks at 65 % (was 40 %) and slower: at 40 % the face looked like it disappeared, especially in compressed video.
+- Demo autopilot keeps sliding until a high obstacle is fully behind it (it stood up too early and stumbled in the landscape video).
+
 ## 2026-11-02 – v0.3 part G: promo videos
 
 - `scripts/promo-video.mjs` records the real game with captions: landing → photo → cut-out → Photo Booth looks → run → Robot Rush → pixel crash → share sheet → end card. Landscape 1280×720 and vertical 1080×1920 (recorded at 540×960, scaled ×2 with crisp pixels), converted to MP4 with ffmpeg. Output in `promo/videos/` (git-ignored: it shows the owner's face).

@@ -40,11 +40,6 @@ export const settingsScreen: Screen = (app, root) => {
           </select></label>`
             : ''
         }
-        <label class="toggle"><span>Robot (test)<br><span class="note">Stumble: first crash trips you, the robot catches up – crash again and you're caught. Attacks only: one crash ends the run.</span></span>
-          <select data-robot-mode>
-            <option value="stumble" ${s.robotMode === 'stumble' ? 'selected' : ''}>Stumble</option>
-            <option value="attacks" ${s.robotMode === 'attacks' ? 'selected' : ''}>Attacks only</option>
-          </select></label>
         <label class="toggle"><span>Debug view<br><span class="note">Hitboxes and FPS. For developers.</span></span>
           <input type="checkbox" data-debug ${app.debug ? 'checked' : ''} /></label>
         <h3>Your data</h3>
@@ -64,9 +59,6 @@ export const settingsScreen: Screen = (app, root) => {
   );
 
   wireFeedback(root);
-  root.querySelector<HTMLSelectElement>('[data-robot-mode]')?.addEventListener('change', (e) => {
-    setSettings({ robotMode: (e.target as HTMLSelectElement).value as Settings['robotMode'] });
-  });
   root.querySelector<HTMLSelectElement>('[data-touch-buttons]')?.addEventListener('change', (e) => {
     setSettings({
       touchButtons: (e.target as HTMLSelectElement).value as Settings['touchButtons'],

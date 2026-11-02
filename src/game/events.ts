@@ -40,7 +40,6 @@ export interface RunConfig {
   vibration: boolean;
   tutorial: boolean;
   debug: boolean;
-  robotMode: 'stumble' | 'attacks';
   /** Debug only: start the run at this many metres (e.g. just before a Robot Rush). */
   startAt?: number;
   /** Demo/video only: the game plays itself for this many ms, then stops dodging. */

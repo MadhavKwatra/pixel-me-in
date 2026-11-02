@@ -128,22 +128,14 @@ export function metres(px: number, pxPerMetre: number): number {
 // ---------------------------------------------------------------- robot
 
 /**
- * Two designs to compare (Settings → Robot):
- * - stumble: a crash trips you and the robot runs up right behind you for a
- *   while; crash again while it is close = caught (Temple Run / Subway Surfers style).
- * - attacks: one crash = game over; the robot only shows up for the Robot Rush.
+ * Stumble + catch-up (Temple Run / Subway Surfers style, owner's pick 2026-11-02):
+ * a crash trips you and the robot runs up right behind you for a while;
+ * crash again while it is close = caught.
  */
-export type RobotMode = 'stumble' | 'attacks';
-
 /** How long the robot stays right behind you after a stumble. */
 export const DANGER_MS = 6000;
 
-export function crashOutcome(
-  mode: RobotMode,
-  now: number,
-  dangerUntil: number,
-): 'stumble' | 'caught' | 'over' {
-  if (mode === 'attacks') return 'over';
+export function crashOutcome(now: number, dangerUntil: number): 'stumble' | 'caught' {
   return now < dangerUntil ? 'caught' : 'stumble';
 }
 

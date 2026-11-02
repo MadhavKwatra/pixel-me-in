@@ -289,11 +289,13 @@ export class RunScene extends Phaser.Scene {
     let slide = !!this.laser && time > this.laser.fireAt - 300;
     for (const o of this.obstacles.getChildren() as ArcadeSprite[]) {
       if (!o.active) continue;
-      const dx = o.x - o.displayWidth / 2 - px;
-      if (dx < -10 || dx > 130) continue;
+      const left = o.x - o.displayWidth / 2 - px;
+      const right = o.x + o.displayWidth / 2 - px;
       const high = o.y + o.displayHeight / 2 < GROUND_Y - 30;
-      if (high && dx < 90) slide = true;
-      if (!high && dx < 95 && !o.getData('ap')) {
+      // Slide from shortly before a high obstacle until it is fully behind you.
+      if (high && left < 115 && right > -30) slide = true;
+      if (left < -10 || left > 130) continue;
+      if (!high && left < 95 && !o.getData('ap')) {
         o.setData('ap', true);
         this.player.pressJump(time);
         this.player.softReleaseJump();
@@ -449,9 +451,9 @@ export class RunScene extends Phaser.Scene {
     if (this.flame.visible)
       this.flame.setPosition(feet.x - 14, feet.y - 26 + (time % 120 < 60 ? 0 : 2));
 
-    const blink = !this.player.dead && time < this.invulnUntil && Math.floor(time / 80) % 2 === 0;
-    this.player.head.setAlpha(blink ? 0.4 : 1);
-    this.player.bodySprite.setAlpha(blink ? 0.4 : 1);
+    const blink = !this.player.dead && time < this.invulnUntil && Math.floor(time / 120) % 2 === 0;
+    this.player.head.setAlpha(blink ? 0.65 : 1);
+    this.player.bodySprite.setAlpha(blink ? 0.65 : 1);
   }
 
   /** Running dust, slide sparks and speed lines. */
@@ -675,7 +677,7 @@ export class RunScene extends Phaser.Scene {
       this.burst(x, y, 0x78dcff);
       return;
     }
-    const outcome = crashOutcome(this.cfg.robotMode, this.time.now, this.dangerUntil);
+    const outcome = crashOutcome(this.time.now, this.dangerUntil);
     if (outcome === 'stumble') {
       this.stumble();
       return;
