@@ -138,7 +138,8 @@ export class App {
     }
 
     this.running = true;
-    this.hud.show();
+    const tutorial = !settings.tutorialDone && !this.startAt();
+    this.hud.show({ padToggle: tutorial });
     this.detachTouch();
     if (isTouch()) this.detachTouch = attachTouchControls($('#game'), $('#pad'));
     this.portraitTip();
@@ -147,7 +148,7 @@ export class App {
       slowMode: settings.slowMode,
       reducedMotion: settings.reducedMotion,
       vibration: settings.vibration,
-      tutorial: !settings.tutorialDone && !this.startAt(),
+      tutorial,
       debug: this.debug,
       startAt: this.startAt(),
       autopilotMs: this.autopilotMs(),

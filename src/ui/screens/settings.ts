@@ -4,6 +4,7 @@ import type { Screen } from '../app';
 import { isTouch } from '../device';
 import { feedbackHtml, wireFeedback } from '../feedback';
 import { onActions, render, toast } from '../dom';
+import { updatePad } from '../touchControls';
 
 const TOGGLES: [keyof Settings, string, string][] = [
   ['muted', 'Mute all sound', ''],
@@ -63,6 +64,7 @@ export const settingsScreen: Screen = (app, root) => {
     setSettings({
       touchButtons: (e.target as HTMLSelectElement).value as Settings['touchButtons'],
     });
+    updatePad();
   });
   root.querySelectorAll<HTMLInputElement>('input[data-k]').forEach((input) =>
     input.addEventListener('change', () => {

@@ -4,7 +4,7 @@
  * auto (portrait only), always, never.
  */
 import { sendInput } from '../game/controller';
-import { getSettings } from '../storage/local';
+import { getSettings, setSettings } from '../storage/local';
 import { isPortrait, isTouch } from './device';
 import { GestureTracker, type GameInput } from './gestures';
 
@@ -12,6 +12,19 @@ export function padVisible(): boolean {
   if (!isTouch()) return false;
   const mode = getSettings().touchButtons;
   return mode === 'always' || (mode === 'auto' && isPortrait());
+}
+
+let refreshPad = () => {};
+
+/** Show or hide the on-screen buttons right now (pause menu, tutorial chip). */
+export function setPadShown(shown: boolean) {
+  setSettings({ touchButtons: shown ? 'always' : 'never' });
+  refreshPad();
+}
+
+/** Re-read the "Touch buttons" setting while a run is on. */
+export function updatePad() {
+  refreshPad();
 }
 
 /** Attach gestures to `surface` and show/hide the pad in `padEl`. Returns a detach function. */
@@ -62,6 +75,7 @@ export function attachTouchControls(surface: HTMLElement, padEl: HTMLElement): (
 
   const refresh = () => padEl.classList.toggle('hidden', !padVisible());
   refresh();
+  refreshPad = refresh;
   const mq = matchMedia('(orientation: portrait)');
   mq.addEventListener('change', refresh);
 
@@ -71,6 +85,7 @@ export function attachTouchControls(surface: HTMLElement, padEl: HTMLElement): (
     surface.removeEventListener('pointerup', up);
     surface.removeEventListener('pointercancel', cancel);
     mq.removeEventListener('change', refresh);
+    refreshPad = () => {};
     padEl.innerHTML = '';
     padEl.classList.add('hidden');
   };

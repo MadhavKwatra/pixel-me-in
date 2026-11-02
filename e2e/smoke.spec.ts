@@ -118,6 +118,34 @@ test('phone held upright: full-screen run, tap to jump, swipe down to slide', as
   expect(net.errors).toEqual([]);
 });
 
+test('phone: hide/show the touch buttons in the tutorial and the pause menu', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'phone only');
+  await page.goto('/');
+  await page
+    .getByRole('button', { name: /play now/i })
+    .first()
+    .click();
+  await page.getByRole('button', { name: /no photo/i }).click();
+  await page.getByRole('button', { name: 'Character 1' }).click();
+  await page.getByRole('button', { name: 'Play', exact: true }).click();
+  await expect(page.locator('#hud')).toBeVisible({ timeout: 10_000 });
+  const jump = page.getByRole('button', { name: 'Jump' });
+  await expect(jump).toBeVisible();
+  // Tutorial chip: hide the buttons right away, then show them again.
+  await page.getByRole('button', { name: 'Hide buttons' }).click();
+  await expect(jump).toBeHidden();
+  await page.getByRole('button', { name: 'Show buttons' }).click();
+  await expect(jump).toBeVisible();
+  // Pause menu: same option.
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.getByRole('combobox', { name: 'Touch buttons' }).selectOption('never');
+  await page.getByRole('button', { name: /Resume/ }).click();
+  await expect(jump).toBeHidden();
+});
+
 test('pause: button, Esc and P all open the pause screen', async ({ page, isMobile }) => {
   test.skip(isMobile, 'keyboard test');
   await page.goto('/');

@@ -5,6 +5,7 @@
  */
 import type { ChaseKind, HintKind, HudData } from '../game/events';
 import { hasGamepad, isTouch } from './device';
+import { padVisible, setPadShown } from './touchControls';
 import { formatNumber } from './dom';
 
 const POWER_LABEL = { shield: 'Shield', magnet: 'Magnet', jetpack: 'Jetpack' } as const;
@@ -15,10 +16,12 @@ export class Hud {
   private gearsEl!: HTMLElement;
   private powerEl!: HTMLElement;
   private last = { metres: -1, gears: -1, power: '' };
+  private lastHint: HintKind | null = null;
 
   constructor(private root: HTMLElement) {}
 
-  show() {
+  /** `padToggle`: during the tutorial on touch screens, a chip to show/hide the buttons. */
+  show(opts: { padToggle?: boolean } = {}) {
     const touch = isTouch();
     this.root.innerHTML = `
       <div class="hud-top">
@@ -27,6 +30,7 @@ export class Hud {
           <span class="stat">⚙ <span data-g>0</span></span>
         </div>
         <div class="hud-power" data-p></div>
+        ${touch && opts.padToggle ? '<button class="pad-toggle" data-pad-toggle></button>' : ''}
         <button class="pause-btn" aria-label="Pause">
           <span aria-hidden="true">❚❚</span>${touch ? '' : '<small>Esc</small>'}
         </button>
@@ -38,6 +42,22 @@ export class Hud {
     this.gearsEl = this.root.querySelector('[data-g]')!;
     this.powerEl = this.root.querySelector('[data-p]')!;
     this.root.querySelector('.pause-btn')!.addEventListener('click', () => this.onPause());
+    const toggle = this.root.querySelector<HTMLButtonElement>('[data-pad-toggle]');
+    if (toggle) {
+      const label = () => {
+        const on = padVisible();
+        toggle.textContent = on ? 'Hide buttons' : 'Show buttons';
+        toggle.setAttribute('aria-pressed', String(on));
+      };
+      label();
+      toggle.addEventListener('click', () => {
+        setPadShown(!padVisible());
+        label();
+        // The hint text depends on the buttons ("Tap Jump" vs "Tap anywhere").
+        if (this.lastHint) this.hint(this.lastHint);
+      });
+    }
+    this.lastHint = null;
     this.last = { metres: -1, gears: -1, power: '' };
     this.root.classList.remove('hidden');
   }
@@ -105,6 +125,9 @@ export class Hud {
   /** Teaching hint. On touch screens the matching half of the screen glows. */
   hint(kind: HintKind | null) {
     this.root.querySelector('.hint')?.remove();
+    this.lastHint = kind;
+    // Tutorial over: the buttons chip goes away (Pause menu keeps the option).
+    if (kind === 'done') this.root.querySelector('[data-pad-toggle]')?.remove();
     // Touch buttons on screen: make the one to press glow.
     document.querySelectorAll('.pad-btn').forEach((b) => b.classList.remove('glow'));
     const glow = kind === 'slide' ? 'slide' : kind === 'jump' || kind === 'double' ? 'jump' : null;
