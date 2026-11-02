@@ -15,7 +15,8 @@ const out = 'promo/videos';
 const FONT = 'public/fonts/PixelifySans.ttf';
 const BAND = 80;
 // The game is quiet on purpose; videos get normal loudness (like other social clips).
-const LOUD = 'loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,alimiter=limit=0.8:level=disabled';
+// The limit is low because AAC overshoots on sharp chiptune waves.
+const LOUD = 'loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,alimiter=limit=0.55:level=disabled';
 mkdirSync(out, { recursive: true });
 
 // The page is recorded smaller than the final video: the caption band is added on top.
@@ -84,7 +85,8 @@ function tapAudio() {
 }
 
 async function record(name, { opts, fontSize, scale, boothZoom }) {
-  const browser = await chromium.launch();
+  // Real GPU: smoother video (the game also guards against software WebGL glitches).
+  const browser = await chromium.launch({ args: ['--enable-gpu', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext(opts);
   await ctx.addInitScript(tapAudio);
   const page = await ctx.newPage();
@@ -230,7 +232,10 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
     // comes after the quiet game-over screen, is the marker. Fallback: the clock.
     const clock = (boothAt - audio.start) / 1000;
     const marker = soundStarts(wav).at(-1);
-    const shift = marker !== undefined && marker > cardAt * 0.5 ? marker - cardAt : clock;
+    // When the end card shows in the picture (the last big change), else the clock.
+    const cut = sceneCuts(webm).at(-1);
+    const cardShown = cut !== undefined && cut - trim > cardAt - 1.5 ? cut - trim : cardAt;
+    const shift = marker !== undefined && marker > cardAt * 0.5 ? marker - cardShown : clock;
     console.log(
       `[${name}] sound: clock ${clock.toFixed(2)} s, marker ${marker?.toFixed(2)} s → shift ${shift.toFixed(2)} s`,
     );
@@ -265,6 +270,26 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
     if (f.startsWith(`cap-${name}-`) || (f === `audio-${name}.webm` && !process.env.KEEP))
       rmSync(join(out, f));
   console.log(`wrote ${mp4} (${end.toFixed(1)} s, end card at ${cardAt.toFixed(2)} s)`);
+}
+
+/** Times (s) where the picture changes a lot (a new screen). */
+function sceneCuts(file) {
+  const log = spawnSync(
+    'ffmpeg',
+    [
+      '-hide_banner',
+      '-i',
+      file,
+      '-an',
+      '-vf',
+      "select='gt(scene,0.08)',showinfo",
+      '-f',
+      'null',
+      '-',
+    ],
+    { encoding: 'utf8' },
+  ).stderr;
+  return [...log.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1]));
 }
 
 /** Times (s) where sound starts after at least 0.4 s of silence. */

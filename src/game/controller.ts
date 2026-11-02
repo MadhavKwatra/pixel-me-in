@@ -12,6 +12,24 @@ import { RunScene } from './scenes/RunScene';
 let game: Phaser.Game | null = null;
 let ready: Promise<void> | null = null;
 
+/**
+ * Software WebGL (SwiftShader, llvmpipe – no usable GPU, and headless video
+ * recording) sometimes samples the wrong texture in Phaser's multi-texture
+ * batch: the face flickered away while running. One texture per batch avoids it.
+ */
+function softwareGL(): boolean {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (!gl) return false;
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /swiftshader|llvmpipe|software|basic render/i.test(name);
+  } catch {
+    return false;
+  }
+}
+
 export function ensureGame(parent: HTMLElement): Promise<void> {
   if (ready) return ready;
   ready = new Promise((resolve) => {
@@ -25,6 +43,7 @@ export function ensureGame(parent: HTMLElement): Promise<void> {
       backgroundColor: '#1b1f3b',
       pixelArt: true,
       roundPixels: true,
+      maxTextures: softwareGL() ? 1 : -1,
       scale: { mode: Phaser.Scale.NONE, zoom: 1 / dpr() },
       physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 1900 }, debug: false } },
       input: { gamepad: true, activePointers: 3 },

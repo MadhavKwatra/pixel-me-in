@@ -2,6 +2,13 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – The real cause of the vanishing face in videos
+
+- Owner: in the landscape video the face still disappeared while running (the earlier blink/autopilot fix was not the cause).
+- Found with frame-by-frame close-ups: the head sprite was visible, full size and fully opaque, yet often not drawn (sometimes half drawn). With one texture per batch (`maxTextures: 1`) it never happened; on the real GPU (NVIDIA, D3D11) it never happened either. Cause: software WebGL (SwiftShader, used by headless Chromium) samples the wrong texture in Phaser's multi-texture batch. The vertical video was lucky.
+- Fix: the game checks the WebGL renderer name at start; on software renderers (SwiftShader, llvmpipe, "software", Microsoft Basic Render) it uses one texture per batch. Normal GPUs keep the fast path.
+- The video recorder now runs Chromium on the GPU, finds the end card in the picture (scene change) to line up the sound (< 0.05 s off), and limits peaks lower (AAC overshoots on square waves).
+
 ## 2026-11-02 – Demo videos with sound; touch buttons toggle
 
 - **Touch buttons on/off in the run**: the Pause menu has the "Touch buttons" option (Upright only / Always / Never), and during the tutorial a "Hide buttons / Show buttons" chip sits next to Pause. Both change the pad at once (`setPadShown`, `updatePad` in `touchControls.ts`).
