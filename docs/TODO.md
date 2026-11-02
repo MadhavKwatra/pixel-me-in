@@ -13,7 +13,9 @@
 - [x] Creator character on the landing page (from the owner's photo; owner picked "Pixel · T-shirt").
 - [ ] Use the creator character in the social preview image (`og-image.png`) once the domain is set.
 - [x] Promo videos (landscape 16:9 + vertical 9:16): `node scripts/promo-video.mjs` → `promo/videos/`.
-- [ ] Owner: add music/voice-over to the videos in an editor if wanted (recordings are silent).
+- [x] Videos: start in the Photo Booth, game sounds + music, captions in a band above the game, "Would you play this?" end card.
+- [x] Touch buttons on/off in the Pause menu and during the tutorial.
+- [ ] Owner: post the demo videos and collect answers to "Would you play this?".
 
 ## Before launch
 

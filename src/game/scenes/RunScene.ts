@@ -417,6 +417,11 @@ export class RunScene extends Phaser.Scene {
       this.updateTutorial();
       this.updateEffects(time);
       if (time < this.autopilotUntil) this.autopilot(time);
+      else if (this.autopilotUntil) {
+        // Autopilot over: let go of the controls (a held slide would never end).
+        this.autopilotUntil = 0;
+        if (this.player.isSliding) this.player.releaseSlide();
+      }
     }
     this.pollGamepad();
 

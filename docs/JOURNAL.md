@@ -2,6 +2,17 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-02 – Demo videos with sound; touch buttons toggle
+
+- **Touch buttons on/off in the run**: the Pause menu has the "Touch buttons" option (Upright only / Always / Never), and during the tutorial a "Hide buttons / Show buttons" chip sits next to Pause. Both change the pad at once (`setPadShown`, `updatePad` in `touchControls.ts`).
+- **Photo Booth music**: a calm chiptune loop while you dress up (follows the Music setting).
+- **Videos reworked** (`scripts/promo-video.mjs`), owner feedback "text covers the UI, no sound feels bad, skip the landing page":
+  - Start in the Photo Booth (styles, colours, hats, glasses, outfits), then the zap, the run, Robot Rush, game over, and an end card "Would you play this? Tell me in the comments!".
+  - Captions sit in an 80 px band above the game (ffmpeg `pad` + `drawtext` with the Pixelify font), never on top of it.
+  - Sound: an init script copies every Web Audio output into a MediaRecorder; ffmpeg adds it with loudness normalised. The recording only starts with the first sound, so the clock offset was ~1 s off; the end-card sound after the quiet game-over screen is now the sync marker (measured: < 0.1 s off).
+  - Landscape zooms the booth ×1.35 so it fills the frame.
+- Fix: when the demo autopilot ended mid-slide, the slide was never released (the character slid on for 40 s). Players never use the autopilot.
+
 ## 2026-11-02 – Stumble is final; video fixes
 
 - Owner picked **Stumble + catch-up**; the "Attacks only" design and the Settings test switch are removed.
@@ -12,7 +23,7 @@ Newest first. What changed, why, and what broke.
 
 - `scripts/promo-video.mjs` records the real game with captions: landing → photo → cut-out → Photo Booth looks → run → Robot Rush → pixel crash → share sheet → end card. Landscape 1280×720 and vertical 1080×1920 (recorded at 540×960, scaled ×2 with crisp pixels), converted to MP4 with ffmpeg. Output in `promo/videos/` (git-ignored: it shows the owner's face).
 - Demo mode for recordings: `?demo&start=372&autopilot=15` – starts near the first Robot Rush, a simple autopilot dodges for 15 s, no fullscreen, no tips. Never on for players.
-- No sound in the videos (browser recordings are silent) – add music in a video editor if wanted.
+- No sound in the videos (browser recordings are silent) – fixed later the same day (see above).
 
 ## 2026-11-02 – v0.3 part D: the maker on the landing page
 

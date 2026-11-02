@@ -22,6 +22,14 @@ const SONGS: Song[] = [
   { bpm: 110, bars: [57, 53, 55, 52], arp: [0, 3, 7, 10, 12, 10, 7, 3], lead: 'sawtooth' },
 ];
 
+// Photo Booth: a calm loop while you dress up.
+const BOOTH: Song = {
+  bpm: 96,
+  bars: [60, 57, 53, 55],
+  arp: [0, 7, 12, 16, 12, 7, 4, 7],
+  lead: 'triangle',
+};
+
 const VOLUME = 0.035;
 let enabled = true;
 let song: Song | null = null;
@@ -87,9 +95,18 @@ export function setMusicEnabled(on: boolean) {
 
 /** Start (or switch to) the loop for a zone. */
 export function playZoneMusic(zone: number) {
+  playSong(SONGS[zone % SONGS.length]);
+}
+
+/** Calm loop for the Photo Booth (keeps playing if it is already on). */
+export function playBoothMusic() {
+  if (song !== BOOTH || !timer) playSong(BOOTH);
+}
+
+function playSong(next: Song) {
   const ac = getAudioContext();
   if (!enabled || !ac) return;
-  song = SONGS[zone % SONGS.length];
+  song = next;
   if (!master) {
     master = ac.createGain();
     master.connect(ac.destination);

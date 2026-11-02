@@ -2,6 +2,7 @@
  * Photo Booth: change the look of your character and save/share a picture.
  * Tabs with picture buttons; every change is saved right away (IndexedDB, on this device).
  */
+import { playBoothMusic, stopMusic } from '../../audio/music';
 import { sfx } from '../../audio/sfx';
 import { OUTFIT_LABELS, RUN_FRAMES } from '../../art/body';
 import { FACE_ACCESSORIES, HATS } from '../../face/accessories';
@@ -325,5 +326,9 @@ export const editorScreen: Screen = (app, root) => {
   });
 
   draw();
-  return () => window.clearInterval(animTimer);
+  playBoothMusic();
+  return () => {
+    window.clearInterval(animTimer);
+    stopMusic();
+  };
 };
