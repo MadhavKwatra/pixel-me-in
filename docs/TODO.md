@@ -33,7 +33,7 @@
 - [x] **Deploy**: Vercel, auto-deploys from GitHub `main` (`vercel.json`).
 - [x] **Repo** is public: https://github.com/MadhavKwatra/pixel-me-in (owner, 2026-11-04). Links on About, Privacy, footer, Settings.
 - [x] Repo homepage link + description set (play.madhavkwatra.in).
-- [ ] Owner: GitHub repo → Settings → Social preview → upload `public/og-image.png` (not possible from the CLI).
+- [x] GitHub social preview image uploaded (owner, 2026-11-04).
 - [ ] README GIF of a run.
 - [x] **SEO + link previews**: canonical, absolute `og:url`/`og:image`, `sitemap.xml`, `robots.txt` for https://play.madhavkwatra.in (owner, 2026-11-04).
 - [x] Google Search Console: Domain property `madhavkwatra.in` verified by DNS TXT (Netlify DNS); sitemap submitted (owner, 2026-11-04).
