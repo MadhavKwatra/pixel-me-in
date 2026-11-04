@@ -17,9 +17,13 @@ export const hasCamera = () => !!navigator.mediaDevices?.getUserMedia;
 
 export const hasGamepad = () => Array.from(navigator.getGamepads?.() ?? []).some(Boolean);
 
-/** Phones only: go full screen (Android). Any orientation is fine: upright or sideways. */
+/**
+ * Phones only: go full screen (Android). Any orientation is fine: upright or sideways.
+ * The installed app already runs full screen; asking again there can leave the game
+ * canvas blank on some Android phones, so it is skipped.
+ */
 export async function enterGameMode(app: HTMLElement) {
-  if (!isTouch()) return;
+  if (!isTouch() || isStandalone()) return;
   try {
     if (!document.fullscreenElement && app.requestFullscreen)
       await app.requestFullscreen({ navigationUI: 'hide' });
