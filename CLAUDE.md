@@ -28,7 +28,7 @@ This is a **public, open-source** repo. Never write private info (emails, accoun
 - Pages: `index.html` (landing + game app), `how-to-play.html`, `privacy.html`, `about.html`; shared header/footer in `partials/` (`<!-- include:name -->`); `src/pages.ts` for the detail pages
 - `src/audio/` – `sfx.ts` (effects), `music.ts` (chiptune loops)
 - `src/storage/` – settings, stats, unlocks (localStorage, keys prefixed `pmi:`)
-- `tests/` unit tests, `e2e/` browser tests, `scripts/` (MediaPipe copy, icon generator, and dev review tools: `likeness-gallery`, `preview-sprites`, `play-check`, `ui-check`, `contact-sheet`, `robot-check`, `share-check`, `creator-variants`, `og-image` (redraws `public/og-image.png`) – they need `npm run dev` running and write to `test-results/`; `promo-video` records the demo videos with sound into `promo/videos/` (git-ignored, needs ffmpeg), `promo-reel` cuts the 18 s Instagram Reel on a beat grid (`--reuse` re-cuts without recording), `promo-images` draws the launch images into `promo/images/`; shared helpers in `promo-lib`)
+- `tests/` unit tests, `e2e/` browser tests, `scripts/` (MediaPipe copy, icon generator, and dev review tools: `likeness-gallery`, `preview-sprites`, `play-check`, `ui-check`, `contact-sheet`, `robot-check`, `share-check`, `creator-variants`, `og-image` (redraws `public/og-image.png`) – they need `npm run dev` running and write to `test-results/`; `promo-video` records the demo videos with sound into `promo/videos/` (git-ignored, needs ffmpeg), `promo-reel` cuts the 18 s Instagram Reel on a beat grid (`--landscape` for the 1920×1080 version, `--reuse` re-cuts without recording), `promo-images` draws the launch images into `promo/images/`; shared helpers in `promo-lib`)
 
 ## Conventions
 

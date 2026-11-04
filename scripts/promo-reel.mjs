@@ -46,6 +46,8 @@ const [photo = 'e2e/local-faces/myPhoto.jpg', base = 'http://localhost:5190'] = 
 const FORMATS = {
   vertical: {
     name: 'reel',
+    // portrait runs 10 % slower: the autopilot lets go ~7 s into the Robot Rush
+    autopilot: 32,
     W: 1080,
     H: 1920,
     VIEW: { width: 540, height: 960 },
@@ -90,6 +92,8 @@ const FORMATS = {
   },
   landscape: {
     name: 'reel-landscape',
+    // wide screens run at full speed: let go earlier, so the crash is still in the rush
+    autopilot: 28,
     W: 1920,
     H: 1080,
     VIEW: { width: 960, height: 540 },
@@ -142,7 +146,7 @@ const { W, H, VIEW } = F;
 const QUIET = { music: false, touchButtons: 'never' };
 // Run: start a bit before the first Robot Rush (410 m); the autopilot lets go inside it.
 const START_M = 260;
-const AUTOPILOT_S = 32;
+const AUTOPILOT_S = F.autopilot;
 const frameAt = (beat) => Math.round(beat * BEAT * FPS);
 
 const run = (cmd, list) => execFileSync(cmd, list, { stdio: ['ignore', 'ignore', 'inherit'] });
@@ -764,8 +768,8 @@ const FRAMES = {
 };
 const TOTAL = frameAt(BEATS);
 
-/** Crop for a punch-in on the recorded 540×960 picture (z = zoom, around cx, cy). */
-function cropFor(z, cx = 270, cy = 480) {
+/** Crop for a punch-in on the recorded picture (z = zoom, around cx, cy). */
+function cropFor(z, cx = VIEW.width / 2, cy = VIEW.height / 2) {
   const w = Math.round(VIEW.width / z / 2) * 2;
   const h = Math.round(VIEW.height / z / 2) * 2;
   const x = Math.max(0, Math.min(VIEW.width - w, Math.round(cx - w / 2)));
@@ -812,6 +816,9 @@ function cutPiece(i, src, from, frames, { speed = 1, zoom = 1, cx, cy } = {}) {
     '[v]',
     '-map',
     '[a]',
+    // a hard stop: the joined pieces must keep the beat grid exactly
+    '-t',
+    (frames / FPS).toFixed(4),
     '-c:v',
     'libx264',
     '-crf',
@@ -856,10 +863,8 @@ function framesPiece(i, dir, frames) {
   return out;
 }
 
-// The player stands at about (150, 540) in the 540×960 run picture (ground at 612).
-const PLAYER = { cx: 210, cy: 520 };
-// Wider to the left, so The Utilizer behind the player stays in the picture.
-const ROBOT = { cx: 170, cy: 520 };
+const PLAYER = F.player;
+const ROBOT = F.robot;
 
 function buildShots(booth, runA, m) {
   const bt = (t) => booth.v0 + (t - booth.marker) / 1000;
@@ -870,14 +875,10 @@ function buildShots(booth, runA, m) {
   add(PLAN.hookEnd, (i, f) => framesPiece(i, 'hook', f));
   // booth montage: 1 beat per look, every other one punched in on the preview
   booth.shots.forEach((s, j) =>
-    add(1, (i, f) =>
-      cutPiece(i, booth.file, bt(s.t) + 0.12, f, j % 2 ? { zoom: 1.3, cx: 270, cy: 330 } : {}),
-    ),
+    add(1, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.12, f, j % 2 ? F.boothZoom : {})),
   );
   // the zap, a bit faster
-  add(2, (i, f) =>
-    cutPiece(i, runA.file, rt(m.zapAt) - 0.05, f, { speed: 1.35, zoom: 2, cx: 270, cy: 470 }),
-  );
+  add(2, (i, f) => cutPiece(i, runA.file, rt(m.zapAt) - 0.05, f, { speed: 1.35, ...F.zap }));
   // RAM pickups (no milestone → this shot gets its 2 beats)
   const ramBeats = m.milestone ? 2 : 4;
   add(ramBeats, (i, f) =>
@@ -890,7 +891,7 @@ function buildShots(booth, runA, m) {
   );
   if (m.milestone) add(2, (i, f) => cutPiece(i, runA.file, rt(m.milestone.t) + 0.05, f));
   // The Utilizer arrives
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.rush) - 0.1, f, { zoom: 1.3, cx: 200, cy: 470 }));
+  add(2, (i, f) => cutPiece(i, runA.file, rt(m.rush) - 0.1, f, F.rush));
   // the beam: ramp into slow motion as it fires
   add(1, (i, f) => cutPiece(i, runA.file, rt(m.laser) - 0.6, f, { zoom: 1.4, ...ROBOT }));
   add(2, (i, f) =>
@@ -902,9 +903,7 @@ function buildShots(booth, runA, m) {
   add(2, (i, f) => cutPiece(i, runA.file, rt(m.stumble) - 0.2, f, { zoom: 1.6, ...ROBOT }));
   // caught: the pixel crash, then "Utilized!"
   add(1, (i, f) => cutPiece(i, runA.file, rt(m.caught) - 0.25, f, { zoom: 1.5, ...ROBOT }));
-  add(2, (i, f) =>
-    cutPiece(i, runA.file, rt(m.utilized) - 0.05, f, { zoom: 1.35, cx: 270, cy: 400 }),
-  );
+  add(2, (i, f) => cutPiece(i, runA.file, rt(m.utilized) - 0.05, f, F.over));
   // end card (drawn)
   add(BEATS - PLAN.endBeat, (i, f) => framesPiece(i, 'end', f));
   const sum = shots.reduce((n, s) => n + s.beats, 0);
@@ -1018,7 +1017,7 @@ caps.forEach((c, i) => {
 const musicIn = n + caps.length;
 filter += `;[v${caps.length}]format=yuv420p[vout]`;
 filter += `;[${musicIn}:a]volume=1.0[mb];[sfx][mb]amix=inputs=2:normalize=0:duration=first,${LOUD}[aout]`;
-const reel = join(OUT, 'pixel-me-in-reel.mp4');
+const reel = join(OUT, `pixel-me-in-${F.name}.mp4`);
 ff([
   ...inputs,
   '-filter_complex',
@@ -1052,35 +1051,21 @@ ff([
 console.log(`wrote ${reel} (${(TOTAL / FPS).toFixed(2)} s, ${BEATS} beats at ${BPM} BPM)`);
 
 // Review: a contact sheet (one frame every 0.5 s) and, with --guides, a safe-zone copy.
-ff([
-  '-i',
-  reel,
-  '-vf',
-  'fps=2,scale=216:384,tile=9x4',
-  '-frames:v',
-  '1',
-  join(CHECK, 'reel-sheet.png'),
-]);
+ff(['-i', reel, '-vf', F.sheet, '-frames:v', '1', join(CHECK, `${F.name}-sheet.png`)]);
 if (flags.has('--guides')) {
-  const guides = [
-    'drawbox=x=0:y=0:w=1080:h=270:color=red@0.25:t=fill',
-    'drawbox=x=0:y=1250:w=1080:h=670:color=red@0.25:t=fill',
-    'drawbox=x=940:y=270:w=140:h=980:color=orange@0.25:t=fill',
-    'drawbox=x=80:y=270:w=860:h=980:color=lime@0.9:t=4',
-  ].join(',');
   ff([
     '-i',
     reel,
     '-vf',
-    guides,
+    F.guides.join(','),
     '-c:v',
     'libx264',
     '-crf',
     '23',
     '-c:a',
     'copy',
-    join(CHECK, 'reel-guides.mp4'),
+    join(CHECK, `${F.name}-guides.mp4`),
   ]);
-  console.log(`wrote ${CHECK}/reel-guides.mp4 and ${CHECK}/reel-sheet.png`);
+  console.log(`wrote ${CHECK}/${F.name}-guides.mp4 and ${CHECK}/${F.name}-sheet.png`);
 }
 for (const f of readdirSync(WORK)) if (/^[0-9a-f]{32}\.webm$/.test(f)) rmSync(join(WORK, f));
