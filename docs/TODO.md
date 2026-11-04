@@ -46,7 +46,9 @@
 - [ ] Owner: check that real phone visits show up in PostHog → Activity and Vercel → Analytics (ad blockers and Brave's GPC switch stats off on purpose).
 - [ ] Real-device checks: Android Chrome and iPhone Safari (camera, gestures, install, offline).
 - [ ] Lighthouse: performance, accessibility, best practices, SEO.
-- [ ] Warn before the ~17 MB face-finder download on mobile data.
+- [x] Offline Photo Booth: face finder downloads on install (not with data saver on) or from Settings (`src/face/offline.ts`).
+- [ ] Warn before the ~17 MB face-finder download on mobile data (first photo in the browser).
+- [ ] Bug: white game screen (sound only) in the installed app on the owner's phone – get the phone console log.
 - [ ] Try many real selfies (dark room, glasses, beard, headwear, different skin tones) and tune the filter.
 
 ## Marketing

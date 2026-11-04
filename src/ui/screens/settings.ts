@@ -1,5 +1,6 @@
 import { applyStatsSetting } from '../../analytics';
 import { clearAllData } from '../../face/faceStore';
+import { downloadFaceFinder, faceFinderReady } from '../../face/offline';
 import { getSettings, setSettings, type Settings } from '../../storage/local';
 import type { Screen } from '../app';
 import { isTouch } from '../device';
@@ -49,6 +50,9 @@ export const settingsScreen: Screen = (app, root) => {
         }
         <label class="toggle"><span>Debug view<br><span class="note">Hitboxes and FPS. For developers.</span></span>
           <input type="checkbox" data-debug ${app.debug ? 'checked' : ''} /></label>
+        <h3>Offline</h3>
+        <div class="toggle"><span>Offline Photo Booth<br><span class="note" data-offline-note>Checking…</span></span>
+          <button class="btn btn-ghost hidden" data-offline-get>Download (17 MB)</button></div>
         <h3>Your data</h3>
         <p class="note">Your face crop, character, scores and settings are stored only in this browser.</p>
         <button class="btn btn-red" data-action="delete">Delete my data</button>
@@ -66,6 +70,24 @@ export const settingsScreen: Screen = (app, root) => {
   );
 
   wireFeedback(root);
+  const note = root.querySelector<HTMLElement>('[data-offline-note]')!;
+  const get = root.querySelector<HTMLButtonElement>('[data-offline-get]')!;
+  const showOffline = (ready: boolean) => {
+    note.textContent = ready
+      ? 'Ready ✓ – photos work with no connection.'
+      : 'The face finder downloads the first time you take a photo.';
+    get.classList.toggle('hidden', ready);
+  };
+  void faceFinderReady().then(showOffline, () => showOffline(false));
+  get.addEventListener('click', async () => {
+    get.disabled = true;
+    get.textContent = 'Downloading…';
+    const ok = await downloadFaceFinder();
+    get.disabled = false;
+    get.textContent = 'Download (17 MB)';
+    showOffline(ok);
+    if (!ok) toast('Could not download – check your connection.');
+  });
   root.querySelector<HTMLSelectElement>('[data-touch-buttons]')?.addEventListener('change', (e) => {
     setSettings({
       touchButtons: (e.target as HTMLSelectElement).value as Settings['touchButtons'],

@@ -3,6 +3,7 @@
  * "new version" toast. iPhones have no install prompt, so we show help text.
  */
 import { registerSW } from 'virtual:pwa-register';
+import { downloadFaceFinder, faceFinderReady, saveDataOn } from '../face/offline';
 import { isIOS, isStandalone } from './device';
 import { $$, toast } from './dom';
 
@@ -32,6 +33,13 @@ function refreshInstallButtons() {
   for (const b of $$('[data-action="install"]')) b.classList.toggle('hidden', !installAvailable());
 }
 
+/** Installed: fetch the face finder (~17 MB) so the Photo Booth works offline too. */
+async function prepareOfflineBooth(justInstalled: boolean) {
+  if (saveDataOn() || !navigator.onLine || (await faceFinderReady())) return;
+  if (justInstalled) toast('Getting the Photo Booth ready for offline play (17 MB)…');
+  if (await downloadFaceFinder()) toast('The Photo Booth now works offline too.');
+}
+
 export function setupPwa() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -42,8 +50,13 @@ export function setupPwa() {
     deferred = null;
     refreshInstallButtons();
     toast('Installed! You can play from your home screen, even offline.');
+    void prepareOfflineBooth(true);
   });
   refreshInstallButtons();
+  // The installed app opened online without the face finder (iPhone, or installed earlier).
+  if (import.meta.env.PROD && isStandalone()) {
+    window.addEventListener('load', () => void prepareOfflineBooth(false), { once: true });
+  }
 
   if (import.meta.env.PROD) {
     const update = registerSW({

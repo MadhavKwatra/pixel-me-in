@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Offline Photo Booth on install
+
+- Owner: the installed app should work fully offline, Photo Booth included. New `src/face/offline.ts` puts the exact MediaPipe files this device needs (SIMD or not, via `FilesetResolver`) into the service worker's `mediapipe` cache: automatically on `appinstalled`, when the installed app opens online without them (iPhone, earlier installs), and from Settings → Offline → "Download (17 MB)". Skipped when the phone's data saver is on.
+- Tested with a production build: after the install event, and after the Settings button, a brand-new photo works with the browser offline.
+- Owner also saw a white game screen (sound only) in the installed app on their phone. Not reproducible on PC (browser, offline, software and GPU WebGL all render). Needs the phone's console log (Wireless debugging + Chrome remote inspect, read-only) to find the cause.
+
 ## 2026-11-04 – Gestures by default; offline checked
 
 - Owner: phones should play with touch gestures by default. `touchButtons` now defaults to `never`; a new `touchButtonsChosen` flag keeps a player's own choice, and old saves with the old default `auto` switch to gestures. The tutorial chip and the pause menu can still turn the buttons on. Unit-tested (`tests/settings.test.ts`).
