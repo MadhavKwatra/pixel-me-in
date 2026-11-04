@@ -22,8 +22,10 @@
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.1.1",
+    "@vercel/analytics": "^2.0.1",
     "idb-keyval": "^6.3.0",
-    "phaser": "^4.2.1"
+    "phaser": "^4.2.1",
+    "posthog-js": "^1.445.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

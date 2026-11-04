@@ -33,13 +33,8 @@
 - [x] **Repo** is public: https://github.com/MadhavKwatra/pixel-me-in (owner, 2026-11-04). Links on About, Privacy, footer, Settings.
 - [ ] Repo extras: README GIF, social preview image, live link once deployed.
 - [ ] **SEO + link previews** (once the domain exists): absolute `og:image` and `og:url`, canonical on every page, per-page preview images (1200×630 with the creator character), `sitemap.xml`, Google Search Console + Bing Webmaster Tools, test previews (opengraph.xyz, LinkedIn Post Inspector, WhatsApp).
-- [ ] **Analytics** – pick one (all need a CSP `connect-src` allow-list for that domain, a Privacy page update and an e2e allow-list; never any image or face data):
-  - PostHog – events, funnels, retention; turn off session replay and autocapture, cookieless mode, EU hosting. Most insight.
-  - Google Analytics 4 – free and powerful, but cookies (consent banner), heavy, clashes with "privacy first".
-  - Cloudflare Web Analytics – free, cookieless, page views only. Simplest.
-  - Vercel Analytics – cookieless, easy on Vercel; custom events on paid plans.
-  - GoatCounter – free, open source, cookieless, simple events.
-  - Events worth counting: page view, play started, photo vs ready-made, run finished (+ distance bucket), share clicked.
+- [x] **Analytics**: Vercel Web Analytics (visits) + PostHog EU (game steps), cookieless, via our own domain, opt-out in Settings (`src/analytics.ts`, `docs/PRIVACY.md`).
+- [ ] Owner: PostHog account (EU) → set `VITE_POSTHOG_KEY` in Vercel → turn on "Cookieless server hash mode" in PostHog → enable Web Analytics in Vercel → redeploy.
 - [ ] Real-device checks: Android Chrome and iPhone Safari (camera, gestures, install, offline).
 - [ ] Lighthouse: performance, accessibility, best practices, SEO.
 - [ ] Warn before the ~17 MB face-finder download on mobile data.

@@ -1,3 +1,4 @@
+import { applyStatsSetting } from '../../analytics';
 import { clearAllData } from '../../face/faceStore';
 import { getSettings, setSettings, type Settings } from '../../storage/local';
 import type { Screen } from '../app';
@@ -12,6 +13,11 @@ const TOGGLES: [keyof Settings, string, string][] = [
   ['reducedMotion', 'Reduce motion', 'No screen shake, no flashes, calmer effects.'],
   ['slowMode', 'Slow mode', 'The game runs 25% slower. Easier to react.'],
   ['vibration', 'Vibrate on crash', 'Android phones only.'],
+  [
+    'stats',
+    'Share anonymous play stats',
+    'No cookies, never your photo. Helps the maker see what to improve.',
+  ],
 ];
 
 export const settingsScreen: Screen = (app, root) => {
@@ -72,6 +78,7 @@ export const settingsScreen: Screen = (app, root) => {
       setSettings({ [k]: input.checked });
       if (k === 'muted' || k === 'music') app.applySoundSettings();
       if (k === 'reducedMotion') app.applyMotionSetting();
+      if (k === 'stats') applyStatsSetting();
     }),
   );
   root.querySelector<HTMLInputElement>('input[data-debug]')!.addEventListener('change', (e) => {

@@ -4,6 +4,7 @@
  * the picture (square or story size for Instagram). These are just links – the
  * game itself sends nothing anywhere.
  */
+import { track } from '../analytics';
 import { formatGB } from '../game/rules';
 import { gameUrl } from '../creator';
 import type { AvatarConfig } from '../face/faceStore';
@@ -47,6 +48,7 @@ export function openShareSheet(
   score?: Score,
 ) {
   host.querySelector('.sheet')?.remove();
+  track('share_opened', { from: score ? 'game_over' : 'booth' });
   const sheet = document.createElement('div');
   sheet.className = 'sheet';
   sheet.setAttribute('role', 'dialog');
@@ -64,7 +66,7 @@ export function openShareSheet(
         ${socialLinks(score)
           .map(
             ([i, label, url]) =>
-              `<a class="share-icon" href="${url}" target="_blank" rel="noopener" aria-label="Share on ${label}">${icon(i, 26)}<span>${label}</span></a>`,
+              `<a class="share-icon" href="${url}" target="_blank" rel="noopener" data-net="${i}" aria-label="Share on ${label}">${icon(i, 26)}<span>${label}</span></a>`,
           )
           .join('')}
         <button class="share-icon" data-copy aria-label="Copy link">${icon('link', 26)}<span>Copy link</span></button>
@@ -86,6 +88,11 @@ export function openShareSheet(
   sheet.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     if (t === sheet || t.closest('[data-close]')) return close();
+    const net =
+      t.closest<HTMLElement>('[data-net]')?.dataset.net ??
+      (t.closest('[data-native]') ? 'native' : t.closest('[data-copy]') ? 'copy' : undefined) ??
+      t.closest<HTMLElement>('[data-save]')?.dataset.save;
+    if (net) track('share_clicked', { to: net });
     if (t.closest('[data-native]')) {
       await shareCardFile(
         await makeCard(face, cfg, score, 'story'),

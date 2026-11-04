@@ -13,6 +13,8 @@ export interface Settings {
   /** On-screen Jump/Slide buttons: auto = upright phones only. */
   touchButtons: 'auto' | 'always' | 'never';
   portraitTipShown: boolean;
+  /** Anonymous, cookieless play stats (src/analytics.ts). The player can turn them off. */
+  stats: boolean;
 }
 
 export interface Stats {
@@ -52,6 +54,7 @@ export function getSettings(): Settings {
     tutorialDone: false,
     touchButtons: 'auto',
     portraitTipShown: false,
+    stats: true,
   });
 }
 

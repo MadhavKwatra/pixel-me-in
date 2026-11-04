@@ -2,6 +2,7 @@
  * The app shell: opens/closes the full-screen game, switches screens, and
  * runs the Play flow. Screens live in ./screens/*.ts.
  */
+import { bucket, GB_STEPS, METRE_STEPS, track } from '../analytics';
 import { pauseMusic, resumeMusic, setMusicEnabled, stopMusic } from '../audio/music';
 import { setMuted, sfx, unlockAudio } from '../audio/sfx';
 import { drawBodySheet } from '../art/body';
@@ -139,6 +140,12 @@ export class App {
 
     this.running = true;
     const tutorial = !settings.tutorialDone && !this.startAt();
+    track('run_started', {
+      source: this.avatar.source,
+      touch: isTouch(),
+      portrait: isPortrait(),
+      tutorial,
+    });
     this.hud.show({ padToggle: tutorial });
     this.detachTouch();
     if (isTouch()) this.detachTouch = attachTouchControls($('#game'), $('#pad'));
@@ -218,10 +225,17 @@ export class App {
     onGame(EVENTS.toast, (text: string) => this.hud.toast(text));
     onGame(EVENTS.hint, (h: Parameters<Hud['hint']>[0]) => {
       this.hud.hint(h);
-      if (h === 'done') setSettings({ tutorialDone: true });
+      if (h === 'done') {
+        setSettings({ tutorialDone: true });
+        track('tutorial_done');
+      }
     });
     onGame(EVENTS.pause, () => this.pause());
     onGame(EVENTS.over, (d: GameOverData) => {
+      track('run_finished', {
+        metres: bucket(d.metres, METRE_STEPS),
+        ram: bucket(d.gears, GB_STEPS),
+      });
       this.running = false;
       this.detachTouch();
       this.hud.hide();

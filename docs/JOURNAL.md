@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Anonymous play stats
+
+- Owner wants to see visits and how people play, without cookies. Added `src/analytics.ts`: Vercel Web Analytics (visits, referrers, devices) + PostHog EU in `cookieless_mode: 'always'` with memory persistence (daily-rotating server hash for unique visitors). A fixed event list with rough ranges (distance, GB), never image/face/name data.
+- Both go through our own domain (`/_vercel/insights`, `/ph` rewrite in `vercel.json`), so the CSP stays `connect-src 'self'`. Checked with a production build and a fake key: events go to `/ph/e/`, 0 cookies, 0 other hosts, 0 CSP errors. PostHog drops headless browsers as bots (good for our tests and videos).
+- Off in dev, in automated browsers, with Do Not Track / Global Privacy Control, without `VITE_POSTHOG_KEY`, and via Settings → "Share anonymous play stats". The PostHog chunk (~116 KB gzip) loads after the page is ready.
+
 ## 2026-11-04 – New theme: "Save Your RAM"
 
 - Owner's idea, riding a real news moment (OpenAI's CEO on idle RAM in home PCs, late Oct 2026). Researched first: what was actually said (he did not say people can't own RAM), the RAM shortage, and parody law (caricature + joke name; no real photo, name, logos or fake quotes). Owner picked: caricature mech, name "Pixel Me In: Save Your RAM", fast release today, replace zones now (old ones kept).

@@ -3,6 +3,7 @@
  * (Phaser, MediaPipe) only loads when the player presses Play, so the page
  * stays fast.
  */
+import { initAnalytics, track } from './analytics';
 import { getSettings } from './storage/local';
 import { $, onActions } from './ui/dom';
 import { showLoader } from './ui/loader';
@@ -12,6 +13,7 @@ import { promptInstall, setupPwa } from './ui/pwa';
 
 setupPwa();
 setupNav();
+initAnalytics();
 
 // Phones: a sticky "Play now" bar appears once the hero's Play button scrolls away.
 {
@@ -56,7 +58,10 @@ async function openApp() {
 
 onActions($('#landing'), {
   play: () => void openApp(),
-  install: () => void promptInstall(),
+  install: () => {
+    track('install_clicked');
+    void promptInstall();
+  },
 });
 
 // Challenge link from a friend: ?beat=1234 (just a number in the link; nothing is sent).
@@ -65,6 +70,7 @@ onActions($('#landing'), {
   const el = document.querySelector<HTMLElement>('.challenge');
   if (el && beat > 0 && beat < 1_000_000) {
     sessionStorage.setItem('pmi:beat', String(beat));
+    track('challenge_opened');
     el.textContent = `Your friend ran ${beat.toLocaleString('en-US')} m. Can you beat it?`;
     el.classList.remove('hidden');
   }

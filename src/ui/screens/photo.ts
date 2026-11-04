@@ -2,6 +2,7 @@
  * Getting a face: camera, upload, or a ready-made character.
  * Everything here runs in the browser. See docs/PRIVACY.md for the full flow.
  */
+import { track } from '../../analytics';
 import { sfx } from '../../audio/sfx';
 import { FACE_SIZE } from '../../config';
 import { canvasToBlob, canvasToPixels } from '../../face/canvas';
@@ -176,6 +177,7 @@ export const photoScreen: Screen = (app, root) => {
     try {
       const faces = await detectFaces(source);
       face = pickMainFace(faces);
+      track('photo_scanned', { faces: Math.min(faces.length, 5) });
       if (face) {
         cutout = await cutOutHead(source, face).catch(() => null);
         t = cutout ? cropFromHeadBox(cutout.bbox, eyeAngle(face)) : cropFromDetection(face);
@@ -325,6 +327,7 @@ export const photoScreen: Screen = (app, root) => {
       cutout = null;
       const cfg = { ...base(), source: 'photo' as const };
       await saveAvatar(cfg);
+      track('photo_used', { cutout: !!cutout });
       await app.refreshAvatar();
       sfx.power();
       app.go('editor');
@@ -364,6 +367,7 @@ export const photoScreen: Screen = (app, root) => {
   async function pickPreset(i: number) {
     await deleteBaseFace();
     await saveAvatar({ ...base(), source: 'preset', presetId: i });
+    track('preset_picked');
     await app.refreshAvatar();
     app.go('editor');
   }

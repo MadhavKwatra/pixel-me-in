@@ -8,7 +8,8 @@ This is a **public, open-source** repo. Never write private info (emails, accoun
 
 ## Golden rule: the photo never leaves the device
 
-- No server, no uploads, no analytics, no third-party requests. `connect-src 'self'` in the CSP (see `vite.config.ts`) enforces it.
+- No server, no uploads, no third-party requests. `connect-src 'self'` in the CSP (see `vite.config.ts`) enforces it.
+- Anonymous play stats only through `src/analytics.ts` (Vercel Web Analytics + PostHog, cookieless, via our own domain, a fixed event list, never image/face/name data, player can opt out). New events must be added there and to `docs/PRIVACY.md`.
 - MediaPipe model + WASM are self-hosted under `public/mediapipe/`. Never load them from a CDN.
 - Only the 256×256 normalized face crop is stored (IndexedDB, `src/face/faceStore.ts`). The original photo is dropped after cropping.
 - Any change to the photo pipeline must update `docs/PRIVACY.md`. The e2e tests fail on any request to another host.
