@@ -38,7 +38,7 @@
 - [x] **SEO + link previews**: canonical, absolute `og:url`/`og:image`, `sitemap.xml`, `robots.txt` for https://play.madhavkwatra.in (owner, 2026-11-04).
 - [x] Google Search Console: Domain property `madhavkwatra.in` verified by DNS TXT (Netlify DNS); sitemap submitted (owner, 2026-11-04).
 - [x] Bing Webmaster Tools: imported from Google Search Console (it imported `https://madhavkwatra.in/`).
-- [ ] Owner: in Bing, make sure `https://play.madhavkwatra.in/sitemap.xml` is submitted (add the `play.` site with a meta tag if Bing refuses).
+- [x] Bing: `play.` sitemap submitted and read – Success, 4 URLs (owner, 2026-11-04).
 - [x] WhatsApp link preview works (title, text, picture).
 - [ ] Optional: centre the title in `og-image.png` so WhatsApp's square crop shows it (offered to the owner).
 - [x] **Analytics**: Vercel Web Analytics (visits) + PostHog US (game steps), cookieless, via our own domain, opt-out in Settings (`src/analytics.ts`, `docs/PRIVACY.md`).
