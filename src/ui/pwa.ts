@@ -3,6 +3,7 @@
  * "new version" toast. iPhones have no install prompt, so we show help text.
  */
 import { registerSW } from 'virtual:pwa-register';
+import { track } from '../analytics';
 import { downloadFaceFinder, faceFinderReady, saveDataOn } from '../face/offline';
 import { isIOS, isStandalone } from './device';
 import { $$, toast } from './dom';
@@ -50,6 +51,7 @@ export function setupPwa() {
     deferred = null;
     refreshInstallButtons();
     toast('Installed! You can play from your home screen, even offline.');
+    track('app_installed');
     void prepareOfflineBooth(true);
   });
   refreshInstallButtons();

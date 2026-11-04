@@ -32,7 +32,8 @@ export type StatEvent =
   | 'share_opened'
   | 'share_clicked'
   | 'challenge_opened'
-  | 'install_clicked';
+  | 'install_clicked'
+  | 'app_installed';
 
 const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 

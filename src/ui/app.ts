@@ -19,7 +19,7 @@ import {
 } from '../game/controller';
 import { EVENTS, type ChaseKind, type GameOverData } from '../game/events';
 import { getSettings, setSettings } from '../storage/local';
-import { enterGameMode, isPortrait, isTouch, leaveGameMode } from './device';
+import { enterGameMode, isPortrait, isStandalone, isTouch, leaveGameMode } from './device';
 import { playDigitizer } from './digitizer';
 import { $, toast } from './dom';
 import { Hud } from './hud';
@@ -144,6 +144,7 @@ export class App {
       source: this.avatar.source,
       touch: isTouch(),
       portrait: isPortrait(),
+      installed: isStandalone(),
       tutorial,
     });
     this.hud.show({ padToggle: tutorial });
