@@ -5,18 +5,15 @@
 // Captions go in a band above the game (never on top of it).
 // Uses the owner's own photo (consent) – never commit the videos.
 import { chromium, devices } from '@playwright/test';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { FONT, LOUD, collectAudio, sceneCuts, soundStarts, tapAudio, wait } from './promo-lib.mjs';
 
 const photo = process.argv[2] ?? 'e2e/local-faces/myPhoto.jpg';
 const base = process.argv[3] ?? 'http://localhost:5190';
 const out = 'promo/videos';
-const FONT = 'public/fonts/PixelifySans.ttf';
 const BAND = 80;
-// The game is quiet on purpose; videos get normal loudness (like other social clips).
-// The limit is low because AAC overshoots on sharp chiptune waves.
-const LOUD = 'loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,alimiter=limit=0.55:level=disabled';
 mkdirSync(out, { recursive: true });
 
 // The page is recorded smaller than the final video: the caption band is added on top.
@@ -44,45 +41,6 @@ const FORMATS = {
     boothZoom: 1,
   },
 };
-
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * Runs in the page before anything else: every Web Audio context also feeds a
- * MediaRecorder, so the game's own sounds and music end up in the video.
- */
-function tapAudio() {
-  const promo = { chunks: [], start: 0, rec: null };
-  window.__promo = promo;
-  const Orig = window.AudioContext;
-  window.AudioContext = class extends Orig {
-    constructor(...args) {
-      super(...args);
-      this.__tap = this.createMediaStreamDestination();
-      const begin = () => {
-        if (promo.rec || this.state !== 'running') return;
-        promo.rec = new MediaRecorder(this.__tap.stream, { mimeType: 'audio/webm;codecs=opus' });
-        promo.rec.ondataavailable = (e) => e.data.size && promo.chunks.push(e.data);
-        promo.rec.start(250);
-        promo.start = Date.now();
-      };
-      this.addEventListener('statechange', begin);
-      begin();
-    }
-  };
-  const connect = AudioNode.prototype.connect;
-  AudioNode.prototype.connect = function (target, ...rest) {
-    const result = connect.call(this, target, ...rest);
-    if (target instanceof AudioDestinationNode && this.context.__tap)
-      connect.call(this, this.context.__tap);
-    return result;
-  };
-  // Unlock a few outfits so the booth shows them (scores stay at 0).
-  localStorage.setItem(
-    'pmi:stats',
-    JSON.stringify({ best: 0, totalGears: 200, totalDistance: 6000, runs: 12 }),
-  );
-}
 
 async function record(name, { opts, fontSize, scale, boothZoom }) {
   // Real GPU: smoother video (the game also guards against software WebGL glitches).
@@ -178,19 +136,7 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
   await wait(4500);
 
   // Collect the sound.
-  const audio = await page.evaluate(async () => {
-    const p = window.__promo;
-    if (!p.rec) return null;
-    await new Promise((r) => {
-      p.rec.onstop = r;
-      p.rec.stop();
-    });
-    const bytes = new Uint8Array(await new Blob(p.chunks).arrayBuffer());
-    let s = '';
-    for (let i = 0; i < bytes.length; i += 0x8000)
-      s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    return { b64: btoa(s), start: p.start };
-  });
+  const audio = await collectAudio(page);
   const end = (Date.now() - boothAt) / 1000;
 
   const video = page.video();
@@ -270,37 +216,6 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
     if (f.startsWith(`cap-${name}-`) || (f === `audio-${name}.webm` && !process.env.KEEP))
       rmSync(join(out, f));
   console.log(`wrote ${mp4} (${end.toFixed(1)} s, end card at ${cardAt.toFixed(2)} s)`);
-}
-
-/** Times (s) where the picture changes a lot (a new screen). */
-function sceneCuts(file) {
-  const log = spawnSync(
-    'ffmpeg',
-    [
-      '-hide_banner',
-      '-i',
-      file,
-      '-an',
-      '-vf',
-      "select='gt(scene,0.08)',showinfo",
-      '-f',
-      'null',
-      '-',
-    ],
-    { encoding: 'utf8' },
-  ).stderr;
-  return [...log.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1]));
-}
-
-/** Times (s) where sound starts after at least 0.4 s of silence. */
-function soundStarts(file) {
-  // ffmpeg prints the result on stderr.
-  const log = spawnSync(
-    'ffmpeg',
-    ['-hide_banner', '-i', file, '-af', 'silencedetect=noise=-45dB:d=0.4', '-f', 'null', '-'],
-    { encoding: 'utf8' },
-  ).stderr;
-  return [...log.matchAll(/silence_end: ([\d.]+)/g)].map((m) => Number(m[1]));
 }
 
 const only = process.argv[4];
