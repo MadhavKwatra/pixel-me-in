@@ -1,2 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /ph/
+
+Sitemap: https://play.madhavkwatra.in/sitemap.xml

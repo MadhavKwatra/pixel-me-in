@@ -11,7 +11,7 @@
 - [x] Robot design: Stumble + catch-up (owner's pick); test switch removed.
 - [x] Share to socials: story image (9:16), X / Threads / WhatsApp / Facebook / LinkedIn, challenge links.
 - [x] Creator character on the landing page (from the owner's photo; owner picked "Pixel · T-shirt").
-- [ ] Use the creator character in the social preview image (`og-image.png`) once the domain is set.
+- [x] Social preview image with the creator character and the RAM theme (`node scripts/og-image.mjs`).
 - [x] Promo videos (landscape 16:9 + vertical 9:16): `node scripts/promo-video.mjs` → `promo/videos/`.
 - [x] Videos: start in the Photo Booth, game sounds + music, captions in a band above the game, "Would you play this?" end card.
 - [x] Touch buttons on/off in the Pause menu and during the tutorial.
@@ -24,15 +24,15 @@
 - [ ] "Classic" mode switch (backyard → space zones are kept in `CLASSIC_ZONES`).
 - [ ] Optional: put any face on the villain (local only, like the player's face).
 - [ ] Music: a "techier" lead for the desk and data-center songs.
-- [ ] Social preview image (`og-image.png`) with the RAM theme.
 
 ## Before launch
 
-- [ ] **Domain**: start with `play.madhavkwatra.in`; later maybe the game name (`pixelmein.madhavkwatra.in`, or its own domain – check if `pixelme.in` is free). Separate deploy + one CNAME; link from the portfolio. Saved characters and scores are tied to the web address – moving later resets players' saves, so pick the final address before sharing widely (redirect the old one).
-- [ ] **Deploy** (Vercel or Netlify work with a private repo; GitHub Pages on a free account needs a public repo).
+- [x] **Domain**: https://play.madhavkwatra.in (Vercel, DNS at Netlify DNS), live 2026-11-04.
+- [x] **Deploy**: Vercel, auto-deploys from GitHub `main` (`vercel.json`).
 - [x] **Repo** is public: https://github.com/MadhavKwatra/pixel-me-in (owner, 2026-11-04). Links on About, Privacy, footer, Settings.
 - [ ] Repo extras: README GIF, social preview image, live link once deployed.
-- [ ] **SEO + link previews** (once the domain exists): absolute `og:image` and `og:url`, canonical on every page, per-page preview images (1200×630 with the creator character), `sitemap.xml`, Google Search Console + Bing Webmaster Tools, test previews (opengraph.xyz, LinkedIn Post Inspector, WhatsApp).
+- [x] **SEO + link previews**: canonical, absolute `og:url`/`og:image`, `sitemap.xml`, `robots.txt` for https://play.madhavkwatra.in (owner, 2026-11-04).
+- [ ] Owner: add the site to Google Search Console + Bing Webmaster Tools and submit the sitemap; test previews (opengraph.xyz, LinkedIn Post Inspector, WhatsApp).
 - [x] **Analytics**: Vercel Web Analytics (visits) + PostHog US (game steps), cookieless, via our own domain, opt-out in Settings (`src/analytics.ts`, `docs/PRIVACY.md`).
 - [ ] Owner: PostHog account (US region, personal account) → set `VITE_POSTHOG_KEY` in Vercel → turn on "Cookieless server hash mode" in PostHog → enable Web Analytics in Vercel → redeploy.
 - [ ] Real-device checks: Android Chrome and iPhone Safari (camera, gestures, install, offline).

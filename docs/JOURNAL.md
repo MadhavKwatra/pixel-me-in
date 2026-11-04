@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Live at play.madhavkwatra.in
+
+- Deployed on Vercel from GitHub `main` (domain session set up the domain; DNS at Netlify DNS). Checked live: pages, MediaPipe files, headers, the `/ph` PostHog proxy and a full photo → booth → run on desktop + phone with 0 other hosts and 0 errors.
+- SEO with the owner's yes: canonical + absolute `og:url`/`og:image` (+ size and alt) on all 4 pages, `twitter:image`, `url`/`image` in the JSON-LD, `public/sitemap.xml`, `robots.txt` with the sitemap line (and `/ph/` disallowed).
+- New social preview image drawn from the real game art by `scripts/og-image.mjs` (desk zone, the maker's character, RAM sticks, The Utilizer, title, address). `make-icons.mjs` no longer draws `og-image.png`.
+
 ## 2026-11-04 – Anonymous play stats
 
 - Owner wants to see visits and how people play, without cookies. Added `src/analytics.ts`: Vercel Web Analytics (visits, referrers, devices) + PostHog (US region, owner's pick) in `cookieless_mode: 'always'` with memory persistence (daily-rotating server hash for unique visitors). A fixed event list with rough ranges (distance, GB), never image/face/name data.

@@ -122,62 +122,12 @@ function icon(size, padFrac) {
   return png(size, size, c.data);
 }
 
-// 5x7 pixel font for the preview image title.
-const FONT = {
-  P: ['1111.', '1...1', '1...1', '1111.', '1....', '1....', '1....'],
-  I: ['111', '.1.', '.1.', '.1.', '.1.', '.1.', '111'],
-  X: ['1...1', '1...1', '.1.1.', '..1..', '.1.1.', '1...1', '1...1'],
-  E: ['11111', '1....', '1....', '1111.', '1....', '1....', '11111'],
-  L: ['1....', '1....', '1....', '1....', '1....', '1....', '11111'],
-  M: ['1...1', '11.11', '1.1.1', '1.1.1', '1...1', '1...1', '1...1'],
-  N: ['1...1', '11..1', '1.1.1', '1..11', '1...1', '1...1', '1...1'],
-  ' ': ['..', '..', '..', '..', '..', '..', '..'],
-};
-function text(c, str, x, y, px, colour, shadow) {
-  let cx = x;
-  for (const ch of str) {
-    const g = FONT[ch];
-    g.forEach((row, gy) =>
-      [...row].forEach((b, gx) => {
-        if (b !== '1') return;
-        if (shadow) c.rect(cx + gx * px + px / 2, y + gy * px + px / 2, px, px, shadow);
-        c.rect(cx + gx * px, y + gy * px, px, px, colour);
-      }),
-    );
-    cx += (g[0].length + 1) * px;
-  }
-}
-
-function ogImage() {
-  const W = 1200;
-  const H = 630;
-  const c = canvas(W, H);
-  const bands = [
-    '#7ec8f2',
-    '#8ccff3',
-    '#9ad6f5',
-    '#a8dcf7',
-    '#b6e3f9',
-    '#c4e9fb',
-    '#d2effd',
-    '#d9f1ff',
-  ];
-  bands.forEach((b, i) => c.rect(0, (i * 480) / bands.length, W, 480 / bands.length + 1, b));
-  c.rect(0, 480, W, 20, '#5fa85a');
-  c.rect(0, 500, W, 130, '#8a6243');
-  for (let x = 0; x < W; x += 24) c.rect(x, 480, 8, 6, '#6fb36a');
-  drawFace(c, 140, 140, 20);
-  text(c, 'PIXEL', 540, 150, 18, '#e8c547', '#14121c');
-  text(c, 'ME IN', 540, 310, 18, '#e8c547', '#14121c');
-  return png(W, H, c.data);
-}
-
 mkdirSync(join(out, 'icons'), { recursive: true });
 writeFileSync(join(out, 'icons', 'icon-192.png'), icon(192, 0.1));
 writeFileSync(join(out, 'icons', 'icon-512.png'), icon(512, 0.1));
 writeFileSync(join(out, 'icons', 'icon-maskable-512.png'), icon(512, 0.2)); // safe zone for round masks
 writeFileSync(join(out, 'icons', 'apple-touch-icon.png'), icon(180, 0.1));
-writeFileSync(join(out, 'og-image.png'), ogImage());
+// og-image.png is drawn by scripts/og-image.mjs (real game art) – not here.
 
 // SVG favicon from the same 16x16 face.
 const rects = FACE.flatMap((row, y) =>
@@ -189,4 +139,4 @@ writeFileSync(
   join(out, 'favicon.svg'),
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges">${rects}</svg>\n`,
 );
-console.log('[make-icons] wrote icons, og-image.png and favicon.svg to public/');
+console.log('[make-icons] wrote icons and favicon.svg to public/');
