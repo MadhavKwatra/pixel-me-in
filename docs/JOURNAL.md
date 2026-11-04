@@ -2,6 +2,12 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Gestures by default; offline checked
+
+- Owner: phones should play with touch gestures by default. `touchButtons` now defaults to `never`; a new `touchButtonsChosen` flag keeps a player's own choice, and old saves with the old default `auto` switch to gestures. The tutorial chip and the pause menu can still turn the buttons on. Unit-tested (`tests/settings.test.ts`).
+- Offline check (production build + service worker, browser set offline): landing, menu, a NEW photo through MediaPipe, Photo Booth, a run and all detail pages work – once the face finder was used online one time (it is cached on first use, ~17 MB, not precached on install).
+- Found and fixed: on the very first visit the service worker did not control the page yet, so a first photo did not cache MediaPipe. `clientsClaim: true` fixes it (updates still wait for the player).
+
 ## 2026-11-04 – Launch marketing pack
 
 - Researched first: Reels safe zone (Meta: keep text out of the top ~270 px, the bottom ~670 px and the right-side buttons), hooks (action or a face change in the first 2 s, no logo first), 4:5 carousels with a strong first slide, and hashtag counts per platform.

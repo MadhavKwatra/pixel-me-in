@@ -106,6 +106,9 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
+        // Take over the page on the very first visit, so the face finder used then is
+        // already cached for offline play. Updates still wait for the player (prompt).
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,ttf}'],
         // MediaPipe (WASM ~13 MB + face models ~4 MB) is too big to precache on install.
         // It is cached the first time the player opens the photo screen.

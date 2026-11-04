@@ -1,8 +1,12 @@
-// Dev tool: a fast Instagram Reel (1080×1920, ~18 s, loops) from the real game.
-//   node scripts/promo-reel.mjs [photo] [baseUrl] [--reuse] [--guides]   (needs `npm run dev` + ffmpeg)
-// Output: promo/videos/pixel-me-in-reel.mp4 (git-ignored: it shows the owner's face).
-// Work files: promo/videos/reel-work/ (recordings, frames; `--reuse` skips the recording
-// and only cuts again). Review: test-results/reel/ (contact sheet, safe-zone copy with --guides).
+// Dev tool: a fast promo clip (~18 s, loops) from the real game, for Reels or wide feeds.
+//   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse] [--guides]
+//   (needs `npm run dev` + ffmpeg)
+// Output (git-ignored: it shows the owner's face):
+//   promo/videos/pixel-me-in-reel.mp4             1080×1920, Instagram Reels / Stories
+//   promo/videos/pixel-me-in-reel-landscape.mp4   1920×1080 (--landscape), X / Threads / LinkedIn
+// Work files: promo/videos/reel-work/ or landscape-work/ (recordings, frames; `--reuse` skips
+// the recording and only cuts again). Review: test-results/reel/ (contact sheet, safe-zone
+// copy with --guides).
 //
 // How: three short browser sessions (Photo Booth montage, the zap + a run on autopilot,
 // a clean music loop), each with a flash + shutter mark to line up picture and sound.
@@ -37,8 +41,95 @@ const flags = new Set(args.filter((a) => a.startsWith('--')));
 const [photo = 'e2e/local-faces/myPhoto.jpg', base = 'http://localhost:5190'] = args.filter(
   (a) => !a.startsWith('--'),
 );
+// Two shapes. Positions are in the recorded picture (crops) or the final frame (captions).
+// Caption roles: hook, booth, top (over the sky), mid (milestone, villain), utilized.
+const FORMATS = {
+  vertical: {
+    name: 'reel',
+    W: 1080,
+    H: 1920,
+    VIEW: { width: 540, height: 960 },
+    device: devices['Pixel 7'],
+    boothZoom: { zoom: 1.3, cx: 270, cy: 330 },
+    zap: { zoom: 2, cx: 270, cy: 470 },
+    // the player stands at about (150, 540), ground at 612
+    player: { cx: 210, cy: 520 },
+    // wider to the left, so The Utilizer behind the player stays in the picture
+    robot: { cx: 170, cy: 520 },
+    rush: { zoom: 1.3, cx: 200, cy: 470 },
+    over: { zoom: 1.35, cx: 270, cy: 400 },
+    caps: {
+      maxW: 920,
+      scale: 1,
+      oneLine: false,
+      hook: { y: 420 },
+      booth: { y: 1180, size: 88, band: true },
+      top: { y: 430 },
+      mid: { y: 670, size: 84 },
+      utilized: { y: 330, size: 130 },
+    },
+    // drawn scenes: low-res size ×3, the character in the hook, the end card
+    hookChar: { x: 180, scale: 3 },
+    photoRect: null, // the selfie fills the frame
+    end: {
+      robotX: 8,
+      playerX: 150,
+      ramX: 200,
+      ramSpan: 230,
+      shade: 1060,
+      lines: { title: 400, sub: 520, play: 680, url: 810, last: 940 },
+      last: 'link in bio',
+    },
+    sheet: 'fps=2,scale=216:384,tile=9x4',
+    guides: [
+      'drawbox=x=0:y=0:w=1080:h=270:color=red@0.25:t=fill',
+      'drawbox=x=0:y=1250:w=1080:h=670:color=red@0.25:t=fill',
+      'drawbox=x=940:y=270:w=140:h=980:color=orange@0.25:t=fill',
+      'drawbox=x=80:y=270:w=860:h=980:color=lime@0.9:t=4',
+    ],
+  },
+  landscape: {
+    name: 'reel-landscape',
+    W: 1920,
+    H: 1080,
+    VIEW: { width: 960, height: 540 },
+    device: {},
+    boothZoom: { zoom: 1.3, cx: 300, cy: 250 },
+    zap: { zoom: 1.6, cx: 480, cy: 250 },
+    // the player stands at about (225, 410), ground at 450
+    player: { cx: 330, cy: 380 },
+    robot: { cx: 280, cy: 380 },
+    rush: { zoom: 1.2, cx: 400, cy: 330 },
+    over: { zoom: 1, cx: 480, cy: 270 },
+    caps: {
+      maxW: 1600,
+      scale: 0.85,
+      oneLine: true,
+      hook: { x: 1450, y: 440, maxW: 820, oneLine: false, scale: 1 },
+      booth: { y: 985, size: 84, band: true },
+      top: { y: 150 },
+      mid: { y: 985, size: 84, band: true },
+      utilized: { y: 985, size: 120, band: true },
+    },
+    hookChar: { x: 210, scale: 2 },
+    photoRect: { x: 150, y: 60, w: 768, h: 960 },
+    end: {
+      robotX: 120,
+      playerX: 300,
+      ramX: 380,
+      ramSpan: 260,
+      shade: 600,
+      lines: { title: 140, sub: 250, play: 350, url: 450, last: 540 },
+      last: 'Your photo never leaves your device',
+    },
+    sheet: 'fps=2,scale=320:180,tile=6x6',
+    guides: ['drawbox=x=96:y=54:w=1728:h=972:color=lime@0.9:t=4'],
+  },
+};
+const F = flags.has('--landscape') ? FORMATS.landscape : FORMATS.vertical;
+
 const OUT = 'promo/videos';
-const WORK = join(OUT, 'reel-work');
+const WORK = join(OUT, F === FORMATS.landscape ? 'landscape-work' : 'reel-work');
 const CHECK = 'test-results/reel';
 for (const d of [WORK, CHECK]) mkdirSync(d, { recursive: true });
 
@@ -46,9 +137,7 @@ const BPM = 132;
 const BEAT = 60 / BPM;
 const FPS = 30;
 const BEATS = 40;
-const W = 1080;
-const H = 1920;
-const VIEW = { width: 540, height: 960 };
+const { W, H, VIEW } = F;
 // Recording settings: no music (the music bed is added in the edit), no touch pad.
 const QUIET = { music: false, touchButtons: 'never' };
 // Run: start a bit before the first Robot Rush (410 m); the autopilot lets go inside it.
@@ -74,7 +163,7 @@ const nearest = (list, x, within) => {
 async function session(name, fn, { video = true, settings } = {}) {
   const browser = await chromium.launch({ args: ['--enable-gpu', '--ignore-gpu-blocklist'] });
   const ctx = await browser.newContext({
-    ...devices['Pixel 7'],
+    ...F.device,
     viewport: VIEW,
     deviceScaleFactor: 1,
     ...(video ? { recordVideo: { dir: WORK, size: VIEW } } : {}),
@@ -267,7 +356,7 @@ const missing = (m) => NEEDED.filter((k) => !m[k]);
 /** Hook frames, end-card frames and caption PNGs, drawn in the page. */
 async function renderFrames(page, captions) {
   await page.evaluate(
-    async ({ photoB64, BEAT, FPS, W, H, frameAtList, captions }) => {
+    async ({ photoB64, BEAT, FPS, W, H, frameAtList, captions, L }) => {
       const { ZONES, LAYER_SIZE, GROUND_TILE, SPRITES, paint } = await import('/src/art/world.ts');
       const { drawRobotSheet, ROBOT_W, ROBOT_H } = await import('/src/art/robot.ts');
       const { loadAvatar } = await import('/src/face/faceStore.ts');
@@ -335,27 +424,29 @@ async function renderFrames(page, captions) {
       };
       const send = async (dir, name, c) => window.__saveFrame(dir, name, c.toDataURL('image/png'));
 
-      // A scrolling desk scene at 3× (360×640 low-res, ground at 540).
+      // A scrolling desk scene at 3× (W/3 × H/3 low-res, ground line G).
       const z = ZONES[0];
-      const sky = paint(360, 640, z.sky);
+      const { LW, LH, G } = L;
+      const sky = paint(LW, LH, z.sky);
       const far = paint(LAYER_SIZE.w, LAYER_SIZE.h, z.far);
       const mid = paint(LAYER_SIZE.w, LAYER_SIZE.h, z.mid);
       const ground = paint(GROUND_TILE.w, GROUND_TILE.h, z.ground);
-      const G = 540;
       const lowScene = (scroll) => {
-        const [c, o] = canvas(360, 640);
+        const [c, o] = canvas(LW, LH);
         o.drawImage(sky, 0, 0);
         const tile = (img, speed, y, w) => {
           const off = -((scroll * speed) % w);
-          for (let x = off - w; x < 360 + w; x += w) o.drawImage(img, Math.round(x), y);
+          for (let x = off - w; x < LW + w; x += w) o.drawImage(img, Math.round(x), y);
         };
         tile(far, 0.12, G - LAYER_SIZE.h - 20, LAYER_SIZE.w);
         tile(mid, 0.4, G - LAYER_SIZE.h + 10, LAYER_SIZE.w);
-        for (let y = G; y < 640; y += GROUND_TILE.h) tile(ground, 1, y, GROUND_TILE.w);
+        for (let y = G; y < LH; y += GROUND_TILE.h) tile(ground, 1, y, GROUND_TILE.w);
         return [c, o];
       };
 
-      // ---- the photo (full size), cropped 9:16 around the face
+      // ---- the photo (full size), cropped around the face to fill `rect`
+      // (the whole frame on a phone; a framed print on the left in landscape)
+      const rect = L.photoRect ?? { x: 0, y: 0, w: W, h: H };
       const blob = await (await fetch(`data:image/jpeg;base64,${photoB64}`)).blob();
       const small = await fileToCanvas(blob);
       const big = await createImageBitmap(blob, { imageOrientation: 'from-image' });
@@ -367,8 +458,8 @@ async function renderFrames(page, captions) {
         h: small.height * 0.4,
       };
       let ch = Math.min(fb.h * k * 2.6, big.height);
-      let cw = (ch * W) / H;
-      if (cw > big.width) [cw, ch] = [big.width, (big.width * H) / W];
+      let cw = (ch * rect.w) / rect.h;
+      if (cw > big.width) [cw, ch] = [big.width, (big.width * rect.h) / rect.w];
       const cx = (fb.x + fb.w / 2) * k;
       const cy = (fb.y + fb.h * 0.5) * k;
       const crop = {
@@ -379,19 +470,32 @@ async function renderFrames(page, captions) {
       };
       const photoFrame = (zoom = 1, block = 0) => {
         const [c, o] = canvas();
+        if (L.photoRect) {
+          o.fillStyle = C.navy;
+          o.fillRect(0, 0, W, H);
+          o.fillStyle = C.ink;
+          o.fillRect(rect.x - 6, rect.y - 6, rect.w + 36, rect.h + 36);
+          o.fillStyle = C.paper;
+          o.fillRect(rect.x - 18, rect.y - 18, rect.w + 36, rect.h + 36);
+        }
         const w = crop.w / zoom;
         const h = crop.h / zoom;
         const sx = crop.x + (crop.w - w) / 2;
         const sy = crop.y + (crop.h - h) / 2;
         if (!block) {
           o.imageSmoothingEnabled = true;
-          o.drawImage(big, sx, sy, w, h, 0, 0, W, H);
+          o.drawImage(big, sx, sy, w, h, rect.x, rect.y, rect.w, rect.h);
           return c;
         }
-        const [s, so] = canvas(Math.ceil(W / block), Math.ceil(H / block));
+        const [s, so] = canvas(Math.ceil(rect.w / block), Math.ceil(rect.h / block));
         so.imageSmoothingEnabled = true;
         so.drawImage(big, sx, sy, w, h, 0, 0, s.width, s.height);
-        o.drawImage(s, 0, 0, s.width * block, s.height * block);
+        o.save();
+        o.beginPath();
+        o.rect(rect.x, rect.y, rect.w, rect.h);
+        o.clip();
+        o.drawImage(s, rect.x, rect.y, s.width * block, s.height * block);
+        o.restore();
         return c;
       };
 
@@ -413,17 +517,18 @@ async function renderFrames(page, captions) {
           const t = f - (beat1 + 8);
           const [low, lo] = lowScene(t * 6);
           const fr = runFrames[Math.floor(t / 2) % runFrames.length];
-          // the character big in the middle of the scene (3 low-res px per game px)
+          // the character big in the scene (s low-res px per game px)
+          const { x: hx, scale: s } = L.hookChar;
           lo.drawImage(
             fr,
             0,
             0,
             fr.width,
             fr.height,
-            Math.round(180 - fr.width * 1.5),
-            G - fr.height * 3 + 6,
-            fr.width * 3,
-            fr.height * 3,
+            Math.round(hx - (fr.width * s) / 2),
+            G - fr.height * s + 2 * s,
+            fr.width * s,
+            fr.height * s,
           );
           [c] = canvas();
           const o = c.getContext('2d');
@@ -444,6 +549,7 @@ async function renderFrames(page, captions) {
         const d = f - Math.round(beat * BEAT * FPS);
         return d < 0 ? 0 : d < 3 ? 1.18 - d * 0.06 : 1;
       };
+      const E = L.end;
       for (let f = 0; f < endN; f++) {
         const [low, lo] = lowScene(f * 7);
         const fr = runFrames[Math.floor(f / 2) % runFrames.length];
@@ -454,29 +560,31 @@ async function renderFrames(page, captions) {
           0,
           ROBOT_W,
           ROBOT_H,
-          8,
+          E.robotX,
           G - ROBOT_H + 2,
           ROBOT_W,
           ROBOT_H,
         );
-        lo.drawImage(fr, 150, G - fr.height + 2);
+        lo.drawImage(fr, E.playerX, G - fr.height + 2);
         for (let i = 0; i < 4; i++) {
-          const x = ((260 + i * 46 - f * 7) % 230) + 200;
+          const x = ((E.ramSpan + 30 + i * 46 - f * 7) % E.ramSpan) + E.ramX;
           const bob = Math.round(Math.sin((f + i * 9) / 5) * 3);
           lo.drawImage(i === 2 ? rgb : ram, x, G - 64 - i * 6 + bob);
         }
         const [c, o] = canvas();
         o.drawImage(low, 0, 0, W, H);
         o.fillStyle = 'rgba(20,18,28,0.72)';
-        o.fillRect(0, 0, W, 1060);
-        text(o, 'Pixel Me In', 540, 400, 130, C.yellow, pop(f, 0) || 1);
-        text(o, 'SAVE YOUR RAM', 540, 520, 84, C.paper);
-        if (appear(f, 1)) text(o, 'Play free', 540, 680, 72, C.cyan, pop(f, 1));
+        o.fillRect(0, 0, W, E.shade);
+        const X = W / 2;
+        const y = E.lines;
+        text(o, 'Pixel Me In', X, y.title, 130, C.yellow, pop(f, 0) || 1);
+        text(o, 'SAVE YOUR RAM', X, y.sub, 84, C.paper);
+        if (appear(f, 1)) text(o, 'Play free', X, y.play, 72, C.cyan, pop(f, 1));
         if (appear(f, 2)) {
           const n = fit(o, 'play.madhavkwatra.in', 84, 940);
-          text(o, 'play.madhavkwatra.in', 540, 810, n, C.yellow, pop(f, 2));
+          text(o, 'play.madhavkwatra.in', X, y.url, n, C.yellow, pop(f, 2));
         }
-        if (appear(f, 3)) text(o, 'link in bio', 540, 940, 60, C.paper, pop(f, 3));
+        if (appear(f, 3)) text(o, E.last, X, y.last, 60, C.paper, pop(f, 3));
         // the last frames fade to white, so the loop starts with the selfie flash
         const left = endN - f;
         if (left <= 5) {
@@ -487,18 +595,25 @@ async function renderFrames(page, captions) {
       }
 
       // ---- captions: transparent full-frame PNGs
+      // Each caption has a role (hook, booth, top, mid, utilized); the layout gives its place.
       for (const [i, cap] of captions.entries()) {
         const [c, o] = canvas();
-        const sizes = cap.lines.map((line) => fit(o, line, cap.size ?? 96, 920));
-        if (cap.band) {
+        const pos = { ...L.caps, ...L.caps[cap.role] };
+        const lines = pos.oneLine ? [cap.lines.join(' ')] : cap.lines;
+        const base = (cap.size ?? pos.size ?? 96) * pos.scale;
+        const sizes = lines.map((line) => fit(o, line, base, pos.maxW));
+        // single-line captions keep the colours of their last line (the punch line)
+        const colours = pos.oneLine
+          ? [cap.colours?.[0] ?? (cap.lines.length > 1 ? C.yellow : C.paper)]
+          : lines.map((_, j) => cap.colours?.[j] ?? (j === 0 ? C.paper : C.yellow));
+        if (pos.band) {
           const h = sizes.reduce((a, n) => a + n * 1.12, 0) + 40;
           o.fillStyle = 'rgba(20,18,28,0.82)';
-          o.fillRect(0, cap.y - sizes[0] * 0.6 - 20, W, h);
+          o.fillRect(0, pos.y - sizes[0] * 0.6 - 20, W, h);
         }
-        let y = cap.y;
-        cap.lines.forEach((line, j) => {
-          const colour = cap.colours?.[j] ?? (j === 0 ? C.paper : C.yellow);
-          text(o, line, 540, y, sizes[j], colour);
+        let y = pos.y;
+        lines.forEach((line, j) => {
+          text(o, line, pos.x ?? W / 2, y, sizes[j], colours[j]);
           y += sizes[j] * 1.12;
         });
         await send('captions', i, c);
@@ -512,6 +627,15 @@ async function renderFrames(page, captions) {
       H,
       frameAtList: FRAMES,
       captions,
+      L: {
+        LW: W / 3,
+        LH: H / 3,
+        G: H / 3 - (H > W ? 100 : 60),
+        hookChar: F.hookChar,
+        photoRect: F.photoRect,
+        end: F.end,
+        caps: F.caps,
+      },
     },
   );
 }
@@ -788,39 +912,34 @@ function buildShots(booth, runA, m) {
   return shots;
 }
 
-/** Captions on the beat grid: [fromBeat, toBeat, lines, y]. */
+/** Captions on the beat grid (from/to in beats). `role` picks the place in the layout. */
 function captionPlan(m) {
-  const at = (b) => b; // beats
   let b = PLAN.hookEnd + PLAN.boothBeats + 2; // after the zap
   const list = [
-    { from: at(0), to: at(3), lines: ['I turned my selfie', 'into a game'], y: 420 },
-    { from: at(3), to: at(11), lines: ['Pick your look'], y: 1180, size: 88, band: true },
+    { from: 0, to: 3, role: 'hook', lines: ['I turned my selfie', 'into a game'] },
+    { from: 3, to: 11, role: 'booth', lines: ['Pick your look'] },
   ];
   const ramBeats = m.milestone ? 2 : 4;
-  list.push({ from: b, to: b + ramBeats, lines: ['Save your RAM'], y: 440 });
+  list.push({ from: b, to: b + ramBeats, role: 'top', lines: ['Save your RAM'] });
   b += ramBeats;
-  list.push({ from: b, to: b + 3, lines: ['8 GB', 'RGB stick!'], y: 420 });
+  list.push({ from: b, to: b + 3, role: 'top', lines: ['8 GB', 'RGB stick!'] });
   b += 3;
   if (m.milestone) {
-    const [gb, joke] = m.milestone.text.split(' – ');
-    list.push({ from: b, to: b + 2, lines: [gb, joke], y: 640, size: 80 });
+    const parts = m.milestone.text.split(' – ');
+    list.push({ from: b, to: b + 2, role: 'mid', lines: [`${parts[0]} –`, parts[1]] });
     b += 2;
   }
-  list.push({ from: b, to: b + 2, lines: ['The Utilizer', 'wants it!'], y: 700, size: 88 });
+  list.push({ from: b, to: b + 2, role: 'mid', lines: ['The Utilizer', 'wants it!'] });
   b += 2;
-  list.push({ from: b, to: b + 3, lines: ['Slide!'], y: 440, size: 120 });
+  list.push({ from: b, to: b + 3, role: 'top', lines: ['Slide!'], size: 120 });
   b += 3;
-  list.push({ from: b, to: b + 2, lines: ['Jump!'], y: 440, size: 120 });
+  list.push({ from: b, to: b + 2, role: 'top', lines: ['Jump!'], size: 120 });
   b += 2;
   const lost = m.grabbed?.text.match(/(\d+) GB/)?.[1];
-  list.push({
-    from: b,
-    to: b + 2,
-    lines: lost ? ['He grabbed', `${lost} GB!`] : ['Ouch!'],
-    y: 420,
-  });
+  const grab = lost ? ['He grabbed', `${lost} GB!`] : ['Ouch!'];
+  list.push({ from: b, to: b + 2, role: 'top', lines: grab });
   b += 3; // the grab, then the pixel crash
-  list.push({ from: b, to: b + 2, lines: ['UTILIZED!'], y: 330, size: 130, colours: ['#ff5a5a'] });
+  list.push({ from: b, to: b + 2, role: 'utilized', lines: ['UTILIZED!'], colours: ['#ff5a5a'] });
   return list;
 }
 
