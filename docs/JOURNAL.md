@@ -8,6 +8,7 @@ Newest first. What changed, why, and what broke.
 - `scripts/promo-images.mjs`: the "everything" post, a 5-slide carousel, a story with room for the link sticker, an X/LinkedIn image and a before/after. Drawn in the page from the real game art and the owner's face (the game's own pipeline and face detector).
 - `scripts/promo-reel.mjs`: an 18.2 s Reel (40 beats at 132 BPM, so the music loops cleanly). Selfie → pixel art hook, a booth montage (1 beat per look), the zap, RAM, an 8 GB RGB stick, a milestone, the beam (slow motion), a cloud drop jump, "He grabbed X GB!", "Utilized!", an end card that fades to white into the loop. Three recordings (booth, run on autopilot, a clean music bed); a white flash + shutter sound lines up picture and sound; every game sound and event is logged with its time, so the cut finds the moments by itself (and records again if the rare RGB stick did not show). Captions sit inside the safe zone.
 - `scripts/promo-lib.mjs`: helpers shared with `promo-video.mjs`.
+
 ## 2026-11-04 – Search engines, stats check, link previews
 
 - Owner set up Google Search Console (Domain property `madhavkwatra.in`, DNS TXT at Netlify DNS – checked it resolves) and Bing Webmaster Tools (import from Google; it imported the root site, so the `play.` sitemap may need its own entry).
