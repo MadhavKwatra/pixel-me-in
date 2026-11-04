@@ -17,6 +17,15 @@
 - [x] Touch buttons on/off in the Pause menu and during the tutorial.
 - [ ] Owner: post the demo videos and collect answers to "Would you play this?".
 
+## Save Your RAM – release 2
+
+- [ ] Zone "Neon City": flying cars (slide), delivery drones, billboards "Upgrade to Cloud RAM™".
+- [ ] Zone "The Cloud": run on clouds, floating server racks, RAM worth more.
+- [ ] "Classic" mode switch (backyard → space zones are kept in `CLASSIC_ZONES`).
+- [ ] Optional: put any face on the villain (local only, like the player's face).
+- [ ] Music: a "techier" lead for the desk and data-center songs.
+- [ ] Social preview image (`og-image.png`) with the RAM theme.
+
 ## Before launch
 
 - [ ] **Domain**: start with `play.madhavkwatra.in`; later maybe the game name (`pixelmein.madhavkwatra.in`, or its own domain – check if `pixelme.in` is free). Separate deploy + one CNAME; link from the portfolio. Saved characters and scores are tied to the web address – moving later resets players' saves, so pick the final address before sharing widely (redirect the old one).

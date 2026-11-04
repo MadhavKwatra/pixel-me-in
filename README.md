@@ -1,6 +1,8 @@
-# Pixel Me In
+# Pixel Me In: Save Your RAM
 
-**Put your face in a 2D pixel-art runner game.** Take a selfie (or upload a photo), watch it turn into pixels, then run, jump and slide through a backyard, a rollercoaster, a beach and outer space – with a giant robot chasing you.
+**Put your face in a 2D pixel-art runner game – and save your RAM from the data center.** Take a selfie (or upload a photo), watch it turn into pixels, then run across your desk and through a data center, grabbing every stick of RAM before _The Utilizer_ (a made-up cartoon villain) does.
+
+_Parody: a fan-made joke game, not linked to or approved by any company or person. See [About](about.html)._
 
 🔒 **Your photo never leaves your device.** Face detection runs in your browser. There is no server and no upload. [How we make sure of that →](docs/PRIVACY.md)
 

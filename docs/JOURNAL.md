@@ -2,6 +2,14 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – New theme: "Save Your RAM"
+
+- Owner's idea, riding a real news moment (OpenAI's CEO on idle RAM in home PCs, late Oct 2026). Researched first: what was actually said (he did not say people can't own RAM), the RAM shortage, and parody law (caricature + joke name; no real photo, name, logos or fake quotes). Owner picked: caricature mech, name "Pixel Me In: Save Your RAM", fast release today, replace zones now (old ones kept).
+- RAM sticks replace gears (1 GB / 8 GB RGB), GB counter, milestone toasts, RAM grab on a stumble, power-ups renamed, "Utilized!" game over, share texts in GB.
+- The Utilizer: our finished robot body with a cartoon CEO in a glass dome. The old antenna would have stuck out of the sprite, so the dome has a small blinking light instead.
+- New zones Your Desk and Data Center (pure art data in `world.ts`; the engine did not change). `ZoneArt.clouds` replaces the "no clouds in space" special case.
+- Pages: landing copy, How to play, About ("Why RAM?" with one accurate sentence + link to the news, and a parody note), footer note, PWA manifest, README.
+
 ## 2026-11-04 – Bomb fix; the repo goes public
 
 - Bug: the thrown bomb did not land on its red ring. The flying bomb tweened to a fixed spot guessed once (`speed × time × 0.6`) while the ring scrolled with the world, and the arc ended 80 px above the ground. Now the bomb's position is set every frame from the ring's live position (`bombArc` in `rules.ts`, unit-tested) and it lands on the ground exactly on the ring.

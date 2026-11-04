@@ -4,6 +4,17 @@
 
 You get "digitized" into a pixel-art world and run as far as you can. Your own face is the hero.
 
+## Theme: "Save Your RAM" (2026-11-04)
+
+A parody of the late-Oct 2026 news: OpenAI's CEO said on a podcast that RAM sitting idle in home PCs is "quite terrible" and data centers use it better, while RAM prices were rising because AI data centers buy most memory. Hook: **your face stays on your device – and so does your RAM.**
+
+- **Pickups** are RAM sticks: 1 GB, rare RGB stick 8 GB (`RAM_RGB_CHANCE` 4 %). The HUD counts GB (TB above 1024). Jokes at real PC sizes: 8 / 16 / 32 / 64 / 128 / 256 GB (`RAM_MILESTONES`). Saves keep the old key `totalGears`.
+- **Villain "The Utilizer"**: a made-up cartoon tech CEO in a glass dome on the robot body (drawn in code, never from a photo, no real name or logos). Rush attacks: _utilization beam_ (slide) and _cloud drop_ (jump). A stumble costs a quarter of this run's RAM (`ramLost`); caught = "Utilized!".
+- **Power-ups**: Firewall (blocks one crash), Download More RAM (pulls RAM, every stick x2, 8 s), Jetpack.
+- **Zones** (release 1): Your Desk → Data Center, repeating. Old zones are kept as `CLASSIC_ZONES`.
+- **Release 2 ideas**: Neon City (flying cars to slide under, drones, "Upgrade to Cloud RAM™" billboards), The Cloud (run on clouds with floating server racks, RAM worth more), Classic mode switch, optional "put any face on the villain" (local only), a RAM shop for unlocks.
+- **Rules for the joke**: satire yes, fake quotes no; parody note on About and in the footer; no ads or merch with anyone's likeness.
+
 ## Modes
 
 | Mode                  | Status | Notes                                                                                              |
