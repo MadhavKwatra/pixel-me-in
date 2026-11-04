@@ -2,7 +2,7 @@
  * Anonymous play stats, so the maker can see how the game is used.
  *
  * - Vercel Web Analytics: page visits, where people came from, device, country.
- * - PostHog (EU, cookieless): game steps like "run started" and "run finished".
+ * - PostHog (US cloud, cookieless): game steps like "run started" and "run finished".
  *
  * Privacy rules (see docs/PRIVACY.md):
  * - No cookies and nothing stored in the browser for stats. PostHog counts
@@ -61,7 +61,7 @@ export function initAnalytics() {
     void import('posthog-js').then(({ default: ph }) => {
       ph.init(KEY, {
         api_host: '/ph',
-        ui_host: 'https://eu.posthog.com',
+        ui_host: 'https://us.posthog.com',
         cookieless_mode: 'always',
         persistence: 'memory',
         autocapture: false,

@@ -53,7 +53,7 @@ Code: [`src/analytics.ts`](../src/analytics.ts). Added 2026-11-04 so the maker c
 - **What is sent:** page visits (Vercel Web Analytics) and a fixed list of game steps (PostHog): `photo_scanned` (number of faces found, max 5), `photo_used`, `preset_picked`, `booth_opened`, `run_started`, `run_finished` (distance and RAM as rough ranges), `tutorial_done`, `share_opened`, `share_clicked` (which button), `challenge_opened`, `install_clicked`.
 - **Never sent:** the photo, the face crop, the character, any image, names or free text.
 - **No cookies, no storage:** PostHog runs with `cookieless_mode: 'always'` and memory-only persistence; it counts visitors with a server-side hash that rotates daily. Autocapture, session recording, surveys, heatmaps, error capture and feature flags are off. Vercel Web Analytics is cookieless too.
-- **Same origin:** both are reached through this site (`/_vercel/insights`, `/ph` – a Vercel rewrite to PostHog's EU region, see [`vercel.json`](../vercel.json)), so `connect-src 'self'` stays and the e2e tests still see no other host.
+- **Same origin:** both are reached through this site (`/_vercel/insights`, `/ph` – a Vercel rewrite to PostHog's US region, see [`vercel.json`](../vercel.json)), so `connect-src 'self'` stays and the e2e tests still see no other host.
 - **Off when:** the player turns off Settings → "Share anonymous play stats", the browser sends Do Not Track or Global Privacy Control, in dev builds, in automated browsers (tests, video recordings), and in any build without `VITE_POSTHOG_KEY` (forks send nothing to PostHog).
 
 ## Check it yourself
