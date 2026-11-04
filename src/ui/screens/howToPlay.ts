@@ -45,7 +45,7 @@ export const howToPlayScreen: Screen = (app, root) => {
       root,
       `<div class="panel">
         <h2>How to play</h2>
-        <p>You run by yourself. Jump over things on the ground, slide under things in the air, and grab gears.</p>
+        <p>You run by yourself. Jump over things on the ground, slide under things in the air, and grab every stick of RAM before the data center does. A normal stick is 1 GB, a rare RGB stick is 8 GB.</p>
         <h3>${CONTROLS[kind].label} controls</h3>
         <dl>
           ${CONTROLS[kind].rows.map(([a, b]) => `<dt><strong>${a}</strong></dt><dd>${b}</dd>`).join('')}
@@ -62,12 +62,12 @@ export const howToPlayScreen: Screen = (app, root) => {
         </details>
         <h3>Power-ups</h3>
         <ul>
-          <li><strong>Shield</strong> (blue): survive one crash.</li>
-          <li><strong>Magnet</strong> (red): pulls gears to you for 8 s.</li>
+          <li><strong>Firewall</strong> (orange): blocks one crash.</li>
+          <li><strong>Download More RAM</strong> (green): pulls RAM to you, and every stick counts double, for 8 s.</li>
           <li><strong>Jetpack</strong> (purple): fly over everything for 5 s.</li>
         </ul>
-        <h3>Worlds</h3>
-        <p>Every 500 m you are zapped to a new world: Backyard → Rollercoaster → Beach → Space. Just before each zap, the robot chases you.</p>
+        <h3>The Utilizer</h3>
+        <p>Every 500 m you are zapped to a new place: Your Desk → Data Center (more places coming). Near the end of each place, The Utilizer attacks: slide under his beam, jump over his cloud drops. If you trip, he runs right behind you and grabs a quarter of your RAM. Trip again while he is close and he gets you.</p>
         <div class="row center">
           <button class="btn" data-action="tutorial">Replay tutorial</button>
           <button class="btn btn-ghost" data-action="back" autofocus>Back</button>

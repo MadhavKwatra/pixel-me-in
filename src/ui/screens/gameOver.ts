@@ -1,3 +1,4 @@
+import { formatGB } from '../../game/rules';
 import { FACE_ACCESSORIES, HATS } from '../../face/accessories';
 import { OUTFIT_LABELS } from '../../art/body';
 import type { GameOverData } from '../../game/events';
@@ -28,9 +29,9 @@ export const gameOverScreen: Screen = (app, root, arg) => {
   render(
     root,
     `<div class="panel center">
-      <h2>Zapped out!</h2>
+      <h2>Utilized!</h2>
       <p style="font-size:1.6rem;margin:0.2rem 0"><strong>${formatNumber(d.metres)} m</strong></p>
-      <p>${newBest ? '🏆 New best!' : `Best: ${formatNumber(stats.best)} m`} · ⚙ ${d.gears} gears</p>
+      <p>${newBest ? '🏆 New best!' : `Best: ${formatNumber(stats.best)} m`} · You saved <strong>${formatGB(d.gears)}</strong> of RAM</p>
       ${friend ? `<p class="challenge-result">${d.metres > friend ? `🎉 You beat your friend's ${formatNumber(friend)} m!` : `Your friend ran ${formatNumber(friend)} m – ${formatNumber(friend - d.metres + 1)} m to go!`}</p>` : ''}
       ${unlocked.length ? `<p role="status">🔓 Unlocked in the Photo Booth: <strong>${unlocked.map((id) => NAMES[id] ?? id).join(', ')}</strong></p>` : ''}
       <div class="stack">

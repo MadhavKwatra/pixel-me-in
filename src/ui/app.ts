@@ -215,6 +215,7 @@ export class App {
     onGame(EVENTS.zone, (d: { index: number; name: string }) => this.hud.banner(d.name, d.index));
     onGame(EVENTS.chase, (k: ChaseKind) => this.hud.chase(k));
     onGame(EVENTS.announce, (text: string) => this.hud.announce(text));
+    onGame(EVENTS.toast, (text: string) => this.hud.toast(text));
     onGame(EVENTS.hint, (h: Parameters<Hud['hint']>[0]) => {
       this.hud.hint(h);
       if (h === 'done') setSettings({ tutorialDone: true });

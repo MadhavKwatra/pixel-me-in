@@ -628,6 +628,44 @@ input[type='range'] {
   animation: banner 2.2s ease forwards;
 }
 
+/* RAM milestones and "he grabbed 6 GB" – small, under the score. */
+.toast-line {
+  position: absolute;
+  left: 50%;
+  top: calc(4.2rem + var(--safe-t, 0px));
+  transform: translateX(-50%);
+  max-width: 92vw;
+  padding: 0.25rem 0.7rem;
+  font-size: clamp(0.85rem, 3.2vmin, 1.25rem);
+  text-align: center;
+  color: var(--paper);
+  background: rgba(20, 18, 28, 0.75);
+  border: 2px solid var(--ink);
+  animation: banner 2.6s ease forwards;
+}
+
+/* Tiny RAM stick next to the GB count (CSS pixels, no image). */
+.ram-ico {
+  display: inline-block;
+  width: 1.1em;
+  height: 0.55em;
+  margin-right: 0.3em;
+  vertical-align: 0.1em;
+  background:
+    linear-gradient(
+        90deg,
+        #14121c 0 18%,
+        transparent 18% 30%,
+        #14121c 30% 48%,
+        transparent 48% 60%,
+        #14121c 60% 78%,
+        transparent 78%
+      )
+      50% 30% / 80% 45% no-repeat,
+    linear-gradient(#2f8a4a 0 75%, #e8c547 75%);
+  border: 2px solid #14121c;
+}
+
 .chase {
   color: #ff6b6b;
   top: 15%;
@@ -2112,4 +2150,15 @@ select {
   .tablet {
     margin-bottom: 1.5rem;
   }
+}
+
+/* Parody notes (About page box, footer line). */
+.parody {
+  padding: 0.6rem 0.8rem;
+  border: 2px dashed var(--yellow);
+}
+
+.parody-note {
+  opacity: 0.75;
+  text-align: center;
 }

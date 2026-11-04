@@ -9,6 +9,8 @@ export const EVENTS = {
   pause: 'pmi:pauseRequest',
   /** Big centre text: "Ready", "GO!". */
   announce: 'pmi:announce',
+  /** A short line under the score: RAM milestones ("16 GB – …"), RAM grabbed. */
+  toast: 'pmi:toast',
   /** Touch input from the HTML layer (see src/ui/gestures.ts). */
   input: 'pmi:input',
 } as const;
@@ -21,6 +23,7 @@ export type ChaseKind = 'rush' | 'close' | null;
 
 export interface HudData {
   metres: number;
+  /** RAM saved this run, in GB (the old name stays so saves keep working). */
   gears: number;
   power: 'shield' | 'magnet' | 'jetpack' | null;
   /** 0..1 time left for timed power-ups. */

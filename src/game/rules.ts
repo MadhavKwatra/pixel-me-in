@@ -121,6 +121,49 @@ export type PowerId = 'shield' | 'magnet' | 'jetpack';
 export const POWERS: PowerId[] = ['shield', 'magnet', 'jetpack'];
 export const POWER_SECONDS: Record<PowerId, number> = { shield: Infinity, magnet: 8, jetpack: 5 };
 
+// ---------------------------------------------------------------- RAM
+
+/** Pickups are RAM sticks: 1 GB each, and a rare RGB stick worth 8 GB. */
+export type RamKind = 'ram' | 'ramRgb';
+export const RAM_RGB_CHANCE = 0.04;
+export const RAM_GB: Record<RamKind, number> = { ram: 1, ramRgb: 8 };
+
+export function pickRam(rng: () => number): RamKind {
+  return rng() < RAM_RGB_CHANCE ? 'ramRgb' : 'ram';
+}
+
+/** GB for one pickup. "Download More RAM" doubles it. */
+export function ramValue(kind: RamKind, doubled: boolean): number {
+  return RAM_GB[kind] * (doubled ? 2 : 1);
+}
+
+/** On a stumble the villain grabs a quarter of the RAM you saved this run. */
+export function ramLost(current: number): number {
+  return Math.floor(Math.max(0, current) * 0.25);
+}
+
+/** Real PC sizes make the best jokes. */
+export const RAM_MILESTONES: [number, string][] = [
+  [8, '8 GB – enough for one Chrome tab'],
+  [16, '16 GB – Chrome can open 3 tabs'],
+  [32, '32 GB – gamer status!'],
+  [64, '64 GB – the data center is jealous'],
+  [128, '128 GB – you ARE the data center'],
+  [256, "256 GB – hands off, it's mine!"],
+];
+
+/** The milestone crossed when going from `before` to `after` GB (the highest one), if any. */
+export function ramMilestone(before: number, after: number): string | null {
+  let hit: string | null = null;
+  for (const [gb, text] of RAM_MILESTONES) if (before < gb && after >= gb) hit = text;
+  return hit;
+}
+
+/** 12 → "12 GB", 1536 → "1.5 TB". */
+export function formatGB(gb: number): string {
+  return gb < 1024 ? `${gb} GB` : `${(gb / 1024).toFixed(1)} TB`;
+}
+
 export function metres(px: number, pxPerMetre: number): number {
   return Math.floor(px / pxPerMetre);
 }

@@ -4,6 +4,7 @@
  * the picture (square or story size for Instagram). These are just links – the
  * game itself sends nothing anywhere.
  */
+import { formatGB } from '../game/rules';
 import { gameUrl } from '../creator';
 import type { AvatarConfig } from '../face/faceStore';
 import type { FaceData } from '../face/renderAvatar';
@@ -20,7 +21,7 @@ export function challengeUrl(score?: Score): string {
 
 function shareText(score?: Score): string {
   return score
-    ? `I ran ${formatNumber(score.metres)} m in Pixel Me In – with my own face as the hero 😄 Can you beat me?`
+    ? `I ran ${formatNumber(score.metres)} m and saved ${formatGB(score.gears)} of RAM from the data center in Pixel Me In – with my own face as the hero 😄 Can you beat me?`
     : 'I turned myself into pixel art in Pixel Me In 😄 Try it – your photo stays on your phone.';
 }
 

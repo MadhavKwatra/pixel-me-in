@@ -63,7 +63,7 @@ await shot('6-power');
 // Stop pressing anything until we crash.
 await page.waitForTimeout(6000);
 await shot('7-running');
-const over = page.getByRole('heading', { name: 'Zapped out!' });
+const over = page.getByRole('heading', { name: 'Utilized!' });
 for (let i = 0; i < 80 && !(await over.isVisible().catch(() => false)); i++) {
   await page.waitForTimeout(100);
   if (i === 2 || i === 6) await shot(`8-crash-${i}`);

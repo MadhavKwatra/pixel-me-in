@@ -13,6 +13,11 @@ import { ROBOT_WALK, type RobotFrame } from '../../art/robot';
 import {
   BOMB_FLIGHT_MS,
   bombArc,
+  pickRam,
+  ramLost,
+  ramMilestone,
+  ramValue,
+  type RamKind,
   crashOutcome,
   DANGER_MS,
   LASER_FIRE_MS,
@@ -53,8 +58,8 @@ const HIGH_BOTTOM = GROUND_Y - 60;
 /** Tutorial: how slow time gets while waiting for the player to act. */
 const SLOW_MO = 0.25;
 const POWER_NAMES: Record<PowerId, string> = {
-  shield: 'SHIELD!',
-  magnet: 'MAGNET!',
+  shield: 'FIREWALL!',
+  magnet: 'DOWNLOAD MORE RAM!',
   jetpack: 'JETPACK!',
 };
 
@@ -163,7 +168,7 @@ export class RunScene extends Phaser.Scene {
       this.add
         .image(i * 120 + Math.random() * 60, this.cloudY(), 'cloud')
         .setDepth(0.5)
-        .setAlpha(0.9)
+        .setAlpha(ZONES[0].clouds ? 0.9 : 0)
         .setScale(0.8 + Math.random() * 0.6),
     );
 
@@ -643,11 +648,22 @@ export class RunScene extends Phaser.Scene {
     }
   }
 
+  /** A RAM stick (now and then a rare RGB one). It flips like a coin. */
   private addGear(x: number, y: number): ArcadeSprite {
-    const g = this.gears.get(x, y, 'gear') as ArcadeSprite;
-    this.revive(g, x, y, 'gear');
-    g.setDepth(6);
-    this.tweens.add({ targets: g, angle: 360, duration: 900, repeat: -1 });
+    const kind = pickRam(this.rng);
+    const g = this.gears.get(x, y, kind) as ArcadeSprite;
+    this.revive(g, x, y, kind);
+    g.setDepth(6).setData('ram', kind);
+    this.tweens.add({
+      targets: g,
+      scaleX: { from: 1, to: 0.2 },
+      duration: 450,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+    if (kind === 'ramRgb' && !this.cfg.reducedMotion)
+      this.tweens.add({ targets: g, y: y - 4, duration: 300, yoyo: true, repeat: -1 });
     return g;
   }
 
@@ -701,6 +717,7 @@ export class RunScene extends Phaser.Scene {
     const outcome = crashOutcome(this.time.now, this.dangerUntil);
     if (outcome === 'stumble') {
       this.stumble();
+      this.loseRam();
       return;
     }
     if (outcome === 'caught') {
@@ -754,10 +771,45 @@ export class RunScene extends Phaser.Scene {
   private collectGear(g: ArcadeSprite) {
     if (!g.active || this.player.dead) return;
     g.disableBody(true, true);
-    this.gearCount++;
+    const kind = (g.getData('ram') as RamKind) ?? 'ram';
+    const gb = ramValue(kind, this.power === 'magnet');
+    const before = this.gearCount;
+    this.gearCount += gb;
     sfx.gear();
-    this.burst(g.x, g.y, this.zone().accent, 4);
-    if (!this.cfg.reducedMotion) popText(this, g.x, g.y - 6, '+1');
+    this.burst(
+      g.x,
+      g.y,
+      kind === 'ramRgb' ? 0xff5a8a : this.zone().accent,
+      kind === 'ramRgb' ? 10 : 4,
+    );
+    if (!this.cfg.reducedMotion) popText(this, g.x, g.y - 6, `+${gb} GB`);
+    const milestone = ramMilestone(before, this.gearCount);
+    if (milestone) this.emit(EVENTS.toast, milestone);
+  }
+
+  /** The villain grabs some of your RAM: the sticks fly back to him. */
+  private loseRam() {
+    const lost = ramLost(this.gearCount);
+    if (!lost) return;
+    this.gearCount -= lost;
+    const p = this.player.box;
+    popText(this, p.x, p.y - 80, `-${lost} GB`, '#ff8a8a');
+    this.emit(EVENTS.toast, `He grabbed ${lost} GB of your RAM!`);
+    if (this.cfg.reducedMotion) return;
+    for (let i = 0; i < Math.min(lost, 6); i++) {
+      const s = this.add.image(p.x, p.y - 40, 'ram').setDepth(22);
+      this.tweens.add({
+        targets: s,
+        x: p.x - 110 - i * 8,
+        y: p.y - 70 - (i % 3) * 14,
+        angle: -200,
+        alpha: 0,
+        delay: i * 50,
+        duration: 650,
+        ease: 'Quad.out',
+        onComplete: () => s.destroy(),
+      });
+    }
   }
 
   private collectPower(s: ArcadeSprite) {
@@ -869,8 +921,8 @@ export class RunScene extends Phaser.Scene {
       onComplete: () => Object.values(old).forEach((o) => o.destroy()),
     });
     this.layers = next;
-    // No clouds in space.
-    this.tweens.add({ targets: this.clouds, alpha: z.id === 'space' ? 0 : 0.9, duration: 500 });
+    // Clouds only outdoors.
+    this.tweens.add({ targets: this.clouds, alpha: z.clouds ? 0.9 : 0, duration: 500 });
     this.zapRobot();
     sfx.zap();
     playZoneMusic(index);

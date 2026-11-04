@@ -84,9 +84,10 @@ export default defineConfig(({ mode }) => ({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons/*.png', 'og-image.png'],
       manifest: {
-        name: 'Pixel Me In',
+        name: 'Pixel Me In: Save Your RAM',
         short_name: 'Pixel Me In',
-        description: 'Put your face in a 2D pixel-art runner. Your photo never leaves your device.',
+        description:
+          'Put your face in a pixel-art runner and save your RAM from the data center. Your photo never leaves your device.',
         theme_color: '#1b1f3b',
         background_color: '#1b1f3b',
         display: 'fullscreen',

@@ -98,4 +98,38 @@ describe('robot', () => {
     expect(bombArc(1.4, from, to, 110)).toEqual(to); // late frames stay on the mark
     expect(bombArc(0.5, from, to, 110).y).toBeLessThan(from.y - 50); // high in the middle
   });
+
+  it('RAM: 1 GB sticks, rare 8 GB RGB sticks, Download More RAM doubles', async () => {
+    const { pickRam, ramValue, RAM_RGB_CHANCE } = await import('../src/game/rules');
+    expect(ramValue('ram', false)).toBe(1);
+    expect(ramValue('ramRgb', false)).toBe(8);
+    expect(ramValue('ram', true)).toBe(2);
+    const rng = makeRng(7);
+    let rgb = 0;
+    for (let i = 0; i < 10_000; i++) if (pickRam(rng) === 'ramRgb') rgb++;
+    expect(rgb / 10_000).toBeGreaterThan(RAM_RGB_CHANCE * 0.7);
+    expect(rgb / 10_000).toBeLessThan(RAM_RGB_CHANCE * 1.3);
+  });
+
+  it('a stumble costs a quarter of your RAM (never negative)', async () => {
+    const { ramLost } = await import('../src/game/rules');
+    expect(ramLost(24)).toBe(6);
+    expect(ramLost(3)).toBe(0);
+    expect(ramLost(-5)).toBe(0);
+  });
+
+  it('RAM milestones fire once, at real PC sizes', async () => {
+    const { ramMilestone } = await import('../src/game/rules');
+    expect(ramMilestone(6, 7)).toBeNull();
+    expect(ramMilestone(7, 8)).toContain('8 GB');
+    expect(ramMilestone(8, 9)).toBeNull();
+    expect(ramMilestone(14, 22)).toContain('16 GB'); // an RGB stick jumps past it
+    expect(ramMilestone(60, 140)).toContain('128 GB'); // the highest one crossed
+  });
+
+  it('GB turns into TB', async () => {
+    const { formatGB } = await import('../src/game/rules');
+    expect(formatGB(12)).toBe('12 GB');
+    expect(formatGB(1536)).toBe('1.5 TB');
+  });
 });

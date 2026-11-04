@@ -1,3 +1,4 @@
+import { formatGB } from '../../game/rules';
 import { GAME_NAME } from '../../config';
 import { getSettings, getStats } from '../../storage/local';
 import { characterFrames, startMiniScene } from '../miniScene';
@@ -37,7 +38,7 @@ export const menuScreen: Screen = (app, root) => {
       </div>
       <dl class="stats">
         <div><dt>Best</dt><dd>${formatNumber(stats.best)} m</dd></div>
-        <div><dt>Gears</dt><dd>${formatNumber(stats.totalGears)}</dd></div>
+        <div><dt>RAM saved</dt><dd>${formatGB(stats.totalGears)}</dd></div>
         <div><dt>Runs</dt><dd>${stats.runs}</dd></div>
       </dl>
       ${app.debug ? '<p class="note center">Debug view is on</p>' : ''}

@@ -1,8 +1,9 @@
 /**
- * The chasing robot, drawn in code from a small skeleton (like the player's
- * body): heavy 8-frame stomp, swinging arms, a scanning red eye, a blinking
- * antenna and a pulsing chest light. Extra poses: laser (arm cannon forward),
- * throw (arm up) and zapped (teleported away).
+ * The chasing villain, "The Utilizer": a made-up cartoon tech CEO in a glass
+ * dome on a data-center mech. Drawn in code from a small skeleton (like the
+ * player's body): heavy 8-frame stomp, swinging arms, a blinking antenna and a
+ * pulsing chest light. Extra poses: laser (arm cannon forward, eyes glow),
+ * throw (arm up) and zapped (teleported away). Parody – no real photo is used.
  */
 import { along, PixelGrid, type P } from './pixelGrid';
 
@@ -34,6 +35,13 @@ const C = {
   glowHot: '#ffd0d0',
   yellow: '#e8c547',
   visor: '#14121c',
+  glass: '#bfe6f2',
+  shine: '#ffffff',
+  skin: '#f0c8a0',
+  hair: '#4a3426',
+  mouth: '#9a5a48',
+  sweater: '#8a8f9e',
+  sweaterDark: '#6f7484',
 };
 
 interface Pose {
@@ -144,18 +152,36 @@ function drawFrame(ctx: CanvasRenderingContext2D, ox: number, f: RobotFrame) {
   g.disc(shoulderF.x, shoulderF.y, 7, C.steel);
   g.disc(shoulderF.x - 1, shoulderF.y - 2, 3, C.light);
 
-  // head: visor with one scanning eye, antenna
-  const headTop = top - 26;
-  g.rect(30, headTop, 36, 26, C.steel);
-  g.rect(30, headTop, 36, 3, C.light);
-  g.rect(30, headTop, 4, 26, C.steelDark);
-  g.rect(35, headTop + 8, 27, 10, C.visor);
-  const ex = 48 + ps.eyeX;
-  g.rect(ex - 4, headTop + 10, 9, 6, f === 'zapped' ? C.yellow : C.glow);
-  g.rect(ex - 2, headTop + 11, 3, 2, C.glowHot);
-  for (let x = 39; x < 58; x += 4) g.rect(x, headTop + 20, 2, 4, C.steelDeep); // mouth grill
-  g.rect(46, headTop - 9, 3, 9, C.steelDark);
-  g.disc(47.5, headTop - 11, 3, ps.antenna ? C.glow : C.red);
+  // head: "The Utilizer" – a made-up cartoon tech CEO in a glass dome
+  // (drawn here pixel by pixel; no photo of anyone is used).
+  const domeY = top - 16;
+  g.disc(48, domeY, 17, C.glass);
+  g.rect(31, domeY, 34, 13, C.glass);
+  // grey crewneck sweater + neck
+  g.rect(37, top - 9, 22, 6, C.sweater);
+  g.rect(45, top - 12, 6, 4, C.skin);
+  g.rect(44, top - 9, 8, 2, C.sweaterDark);
+  // face, short hair, calm smile; the eyes follow the stomp like the old scanner
+  g.disc(48, domeY - 2, 8, C.skin);
+  g.rect(41, domeY - 2, 14, 7, C.skin);
+  g.rect(40, domeY - 12, 16, 5, C.hair);
+  g.rect(39, domeY - 9, 3, 6, C.hair);
+  g.rect(54, domeY - 9, 3, 5, C.hair);
+  g.rect(42, domeY - 13, 10, 2, C.hair);
+  const ex = Math.round(ps.eyeX / 2);
+  const eye = f === 'zapped' ? C.yellow : ps.cannon ? C.glow : C.visor;
+  g.rect(44 + ex, domeY - 3, 2, 2, eye);
+  g.rect(50 + ex, domeY - 3, 2, 2, eye);
+  g.rect(43 + ex, domeY - 6, 4, 1, C.hair);
+  g.rect(49 + ex, domeY - 6, 4, 1, C.hair);
+  g.rect(45, domeY + 3, 6, 1, C.mouth);
+  g.dot(51, domeY + 2, C.mouth);
+  // glass shine + steel ring + a blinking light on top
+  g.rect(35, domeY - 9, 2, 6, C.shine);
+  g.dot(37, domeY - 12, C.shine);
+  g.rect(30, top - 4, 36, 4, C.steelDark);
+  g.rect(30, top - 4, 36, 1, C.light);
+  g.rect(46, domeY - 19, 4, 3, ps.antenna ? C.glow : C.red);
 
   // front limbs
   leg(ps.legF, ps.kneeF, false);

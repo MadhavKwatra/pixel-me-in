@@ -3,6 +3,7 @@
  * device. Two sizes: square (posts) and 9:16 "story" (Instagram/WhatsApp/Snapchat
  * stories). The player decides whether to save or share it.
  */
+import { formatGB } from '../game/rules';
 import { GROUND_TILE, LAYER_SIZE, paint, ZONES } from '../art/world';
 import { GAME_NAME } from '../config';
 import { gameUrl } from '../creator';
@@ -76,7 +77,7 @@ export async function makeCard(
   text(GAME_NAME, story ? 170 : 80, story ? 110 : 56, '#e8c547');
   if (score) {
     text(`I ran ${formatNumber(score.metres)} m`, story ? 330 : 145, story ? 104 : 46);
-    text(`and grabbed ${score.gears} gears`, story ? 430 : 192, story ? 56 : 28);
+    text(`and saved ${formatGB(score.gears)} of RAM`, story ? 430 : 192, story ? 56 : 28);
     text('Can you beat me?', story ? 560 : 240, story ? 72 : 32, '#9cf3ff');
   } else {
     text('Me, pixelated.', story ? 320 : 140, story ? 88 : 38);

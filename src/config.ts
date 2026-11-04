@@ -1,5 +1,7 @@
 /** Working name. Change it here (and in index.html / vite.config.ts manifest). */
 export const GAME_NAME = 'Pixel Me In';
+/** The current theme (owner's pick, 2026-11-04). */
+export const GAME_TAGLINE = 'Save Your RAM';
 
 /** Virtual game resolution. Pixel art is drawn at this size and scaled up. */
 export const VIEW_W = 640;

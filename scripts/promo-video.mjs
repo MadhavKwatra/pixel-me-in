@@ -152,7 +152,7 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
     .waitFor({ timeout: 30_000 })
     .catch(() => {});
   caption('Dodge the robot!');
-  await page.getByRole('heading', { name: 'Zapped out!' }).waitFor({ timeout: 60_000 });
+  await page.getByRole('heading', { name: 'Utilized!' }).waitFor({ timeout: 60_000 });
   caption('Your photo never leaves your phone');
   await wait(2600);
 

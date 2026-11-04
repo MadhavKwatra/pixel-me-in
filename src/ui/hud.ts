@@ -1,14 +1,15 @@
 /**
- * Score, gears, power-up timer, pause button, banners and the in-game
+ * Score, RAM saved, power-up timer, pause button, banners and the in-game
  * teaching hints (HTML over the canvas). Touch devices see touch zones,
  * keyboards see keys – never both.
  */
 import type { ChaseKind, HintKind, HudData } from '../game/events';
+import { formatGB } from '../game/rules';
 import { hasGamepad, isTouch } from './device';
 import { padVisible, setPadShown } from './touchControls';
 import { formatNumber } from './dom';
 
-const POWER_LABEL = { shield: 'Shield', magnet: 'Magnet', jetpack: 'Jetpack' } as const;
+const POWER_LABEL = { shield: 'Firewall', magnet: 'RAM ×2', jetpack: 'Jetpack' } as const;
 
 export class Hud {
   onPause: () => void = () => {};
@@ -27,7 +28,7 @@ export class Hud {
       <div class="hud-top">
         <div class="hud-stats">
           <span class="stat"><span data-m>0</span> m</span>
-          <span class="stat">⚙ <span data-g>0</span></span>
+          <span class="stat"><span class="ram-ico" aria-hidden="true"></span><span data-g>0 GB</span></span>
         </div>
         <div class="hud-power" data-p></div>
         ${touch && opts.padToggle ? '<button class="pad-toggle" data-pad-toggle></button>' : ''}
@@ -71,7 +72,7 @@ export class Hud {
     if (!this.metresEl) return;
     if (d.metres !== this.last.metres) this.metresEl.textContent = formatNumber(d.metres);
     if (d.gears !== this.last.gears) {
-      this.gearsEl.textContent = String(d.gears);
+      this.gearsEl.textContent = formatGB(d.gears);
       if (d.gears > 0) bump(this.gearsEl.parentElement!);
     }
     const p = d.power ?? '';
@@ -116,10 +117,23 @@ export class Hud {
     if (!kind) return;
     const el = document.createElement('div');
     el.className = 'banner chase';
-    el.textContent = kind === 'rush' ? 'Robot rush!' : "It's right behind you!";
+    el.textContent = kind === 'rush' ? 'Idle RAM detected!' : "He's right behind you!";
     holder.append(el);
     setTimeout(() => el.remove(), 2400);
     this.say(el.textContent);
+  }
+
+  /** A short line under the score (RAM milestones, RAM grabbed). */
+  toast(text: string) {
+    const holder = this.root.querySelector('[data-banners]');
+    if (!holder) return;
+    holder.querySelector('.toast-line')?.remove();
+    const el = document.createElement('div');
+    el.className = 'toast-line';
+    el.textContent = text;
+    holder.append(el);
+    setTimeout(() => el.remove(), 2600);
+    this.say(text);
   }
 
   /** Teaching hint. On touch screens the matching half of the screen glows. */
@@ -187,7 +201,7 @@ function hintHtml(kind: HintKind): string {
         ? 'Jump, then tap <b>again</b> in the air!'
         : `Jump, then press ${key(pad ? 'A' : 'Space')} <b>again</b> in the air!`;
     case 'power':
-      return 'Grab the power-up! 🛡️ It saves you from one crash.';
+      return 'Grab the <b>Firewall</b>! It blocks one crash.';
     case 'nice':
       return 'Nice!';
     case 'again':
@@ -195,9 +209,9 @@ function hintHtml(kind: HintKind): string {
     case 'done':
       return "You're ready. Run!";
     case 'laser':
-      return '⚠ Laser! <b>Slide</b> under it!';
+      return '⚠ Utilization beam! <b>Slide</b> under it!';
     case 'bomb':
-      return '⚠ Bomb! <b>Jump</b> over it!';
+      return '⚠ Cloud drop! <b>Jump</b> over it!';
     default:
       return '';
   }
