@@ -1,4 +1,4 @@
-// Dev tool: a promo clip (~36 s, loops) from the real game, for Reels or wide feeds.
+// Dev tool: a promo clip (~31 s, loops) from the real game, for Reels or wide feeds.
 //   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse [--redraw|--booth]] [--guides]
 //   (needs `npm run dev` + ffmpeg)
 // Output (git-ignored: it shows the owner's face):
@@ -9,13 +9,15 @@
 // `--booth` also records the Photo Booth montage again.
 // Review: promo/review/ (contact sheet, safe-zone copy with --guides).
 //
-// How: three short browser sessions (Photo Booth montage, the zap + a run on autopilot,
-// a clean music loop), each with a flash + shutter mark to line up picture and sound.
+// How: browser sessions for the Photo Booth montage and the zap + a run on autopilot,
+// each with a flash + shutter mark to line up the picture with the logged events.
 // Every game sound and event is logged with its time, so the cut finds the moments
 // (RAM, 8 GB RGB stick, beam, cloud drop, stumble, "Utilized!") by itself. The edit
-// is on a 132 BPM beat grid (the Your Desk song): 80 beats, so the music loops cleanly.
+// is on a 132 BPM beat grid (the Your Desk song). The sound track is played again, clean,
+// on the final timeline (the music, then each game sound at its moment), mixed at fixed
+// levels. The grid: 68 beats = 17 whole bars, so the music loops cleanly.
 import { chromium, devices } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -27,7 +29,6 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import {
-  LOUD,
   collectAudio,
   openBooth,
   sceneCuts,
@@ -139,9 +140,8 @@ for (const d of [WORK, CHECK]) mkdirSync(d, { recursive: true });
 const BPM = 132;
 const BEAT = 60 / BPM;
 const FPS = 30;
-// 80 beats (~36 s): time to read every caption. 20 bars = 5 rounds of the 4-bar song,
-// so it loops cleanly.
-const BEATS = 80;
+// 68 beats (~31 s): time to read every caption; 17 whole bars, so it loops on a bar line.
+const BEATS = 68;
 const { W, H, VIEW } = F;
 // Recording settings: no music (the music bed is added in the edit), no touch pad.
 const QUIET = { music: false, touchButtons: 'never' };
@@ -647,40 +647,164 @@ async function renderFrames(page, captions) {
   );
 }
 
-async function recordMusicAndFrames(captions) {
+async function recordFrames(captions) {
   for (const d of ['hook', 'end', 'captions']) {
     rmSync(join(WORK, d), { recursive: true, force: true });
     mkdirSync(join(WORK, d));
   }
   return session(
-    'music',
+    'frames',
     async (page) => {
       await page.exposeFunction('__saveFrame', (dir, name, url) =>
         writeDataUrl(join(WORK, dir, `${String(name).padStart(4, '0')}.png`), url),
       );
       await openBooth(page, `${base}/?demo`, photo);
       await renderFrames(page, captions);
-      // A clean music bed: the Your Desk song, with the shutter on the hook's flash
-      // and the power-up jingle when the end card shows.
-      const start = await page.evaluate(
-        async ({ BEAT, endBeat, flashBeat }) => {
-          const music = await import('/src/audio/music.ts');
-          const { sfx } = await import('/src/audio/sfx.ts');
-          music.stopMusic();
-          await new Promise((r) => setTimeout(r, 1500));
-          music.playZoneMusic(0);
-          const t = Date.now();
-          setTimeout(() => sfx.shutter(), flashBeat * BEAT * 1000);
-          setTimeout(() => sfx.power(), endBeat * BEAT * 1000);
-          return t;
-        },
-        { BEAT, endBeat: PLAN.endBeat, flashBeat: PLAN.flashBeat },
-      );
-      await wait((BEATS * BEAT + 2) * 1000);
-      return { marker: start };
+      return { marker: Date.now() };
     },
     { video: false },
   );
+}
+
+// ---------------------------------------------------------------- the sound track
+// Owner: cutting the recorded game sound with the picture made sounds stop and restart
+// at every cut. So the sound is played again, clean, on the final timeline: one pass of
+// the music, one pass of the game sounds (each one whole, at the moment it shows).
+
+// Sounds left out: the robot's stomps (constant and off the beat) and tiny ones.
+const SKIP = new Set(['robot', 'land', 'click']);
+
+/** When each game sound happens in the final video (s), from the logs and the shot list. */
+function soundPlan(shots, runA, runLog) {
+  const out = [];
+  let beat = 0;
+  for (const s of shots) {
+    const start = frameAt(beat) / FPS;
+    const span = ((frameAt(beat + s.beats) - frameAt(beat)) / FPS) * s.speed;
+    if (s.kind === 'booth') out.push({ t: start, name: 'click' });
+    if (s.kind === 'run')
+      for (const e of runLog.events) {
+        if (!e.type.startsWith('sfx:')) continue;
+        const name = e.type.slice(4);
+        const v = runA.v0 + (e.t - runA.marker) / 1000;
+        if (!SKIP.has(name) && v >= s.from && v < s.from + span)
+          out.push({ t: start + (v - s.from) / s.speed, name });
+      }
+    if (s.tag === 'over') out.push({ t: start + 0.1, name: 'jingle' });
+    beat += s.beats;
+  }
+  out.push({ t: PLAN.flashBeat * BEAT, name: 'shutter' });
+  out.push({ t: PLAN.endBeat * BEAT, name: 'power' });
+  out.sort((a, b) => a.t - b.t);
+  // the same sound twice within 60 ms (shots that overlap a little) plays once
+  return out.filter((e, i) => !out.slice(0, i).some((d) => d.name === e.name && e.t - d.t < 0.06));
+}
+
+/** Plays the music, then the game sounds, live in the page, and records both. */
+async function recordSoundtrack(events) {
+  return session(
+    'soundtrack',
+    async (page) => {
+      await openBooth(page, `${base}/?demo`, photo);
+      return page.evaluate(
+        async ({ events, total }) => {
+          const music = await import('/src/audio/music.ts');
+          const { sfx } = await import('/src/audio/sfx.ts');
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+          music.stopMusic();
+          await sleep(1500);
+          // pass 1: the music, from its first note
+          music.playZoneMusic(0);
+          const musicAt = Date.now();
+          await sleep(total * 1000 + 500);
+          music.stopMusic();
+          await sleep(1500);
+          // pass 2: a mark, then every game sound at its time (1 s after the mark)
+          sfx.shutter();
+          const markAt = Date.now();
+          const zero = markAt + 1000;
+          for (const e of events)
+            setTimeout(
+              () => (e.name === 'jingle' ? music.playGameOverJingle() : sfx[e.name]?.()),
+              zero + e.t * 1000 - Date.now(),
+            );
+          await sleep(1000 + total * 1000 + 1500);
+          return { marker: musicAt, musicAt, markAt };
+        },
+        { events, total: TOTAL / FPS },
+      );
+    },
+    { video: false },
+  );
+}
+
+/** Loudness numbers of a sound file (ffmpeg loudnorm, first pass). */
+function loudness(file) {
+  const log = spawnSync(
+    'ffmpeg',
+    ['-hide_banner', '-i', file, '-af', 'loudnorm=print_format=json', '-f', 'null', '-'],
+    { encoding: 'utf8' },
+  ).stderr;
+  const from = log.lastIndexOf('{');
+  return JSON.parse(log.slice(from, log.indexOf('}', from) + 1));
+}
+
+/**
+ * Cuts the two passes out of the recording, sets each to a fixed level (music under,
+ * game sounds on top) and brings the mix to -16 LUFS with one fixed gain (no pumping).
+ */
+function soundtrack(log) {
+  const aud = join(WORK, 'soundtrack-audio.webm');
+  // The recorder's clock can be seconds off, so find the two passes by their pattern:
+  // each starts after a pause of 1.5 s, and the mark comes exactly (markAt - musicAt)
+  // after the first note of the music.
+  const starts = soundStarts(aud, 1.2);
+  const gap = (log.markAt - log.musicAt) / 1000;
+  const musicStart = starts.find((a) => nearest(starts, a + gap, 0.3) !== undefined);
+  if (musicStart === undefined)
+    throw new Error(`no music + mark pattern in the sound track recording: ${starts.join(', ')}`);
+  const sfxStart = nearest(starts, musicStart + gap, 0.3) + 1;
+  const dur = (TOTAL / FPS).toFixed(3);
+  console.log(
+    `[sound] music at ${musicStart.toFixed(2)} s, game sounds at ${sfxStart.toFixed(2)} s`,
+  );
+  const part = (name, from) => {
+    const out = join(WORK, `${name}.wav`);
+    const af = [
+      `atrim=start=${from.toFixed(3)}:duration=${dur}`,
+      'asetpts=PTS-STARTPTS',
+      'aresample=48000',
+      'aformat=channel_layouts=stereo',
+      `apad=whole_dur=${dur}`,
+    ].join(',');
+    ff(['-i', aud, '-af', af, out]);
+    return out;
+  };
+  const musicWav = part('music', musicStart);
+  const sfxWav = part('sfx', sfxStart);
+  // fixed levels: music at -20 LUFS, game sounds (short and sparse) at -22 LUFS
+  const gain = (file, target) => (target - Number(loudness(file).input_i)).toFixed(2);
+  const mix = join(WORK, 'mix.wav');
+  ff([
+    '-i',
+    musicWav,
+    '-i',
+    sfxWav,
+    '-filter_complex',
+    `[0:a]volume=${gain(musicWav, -20)}dB[m];[1:a]volume=${gain(sfxWav, -22)}dB[s];[m][s]amix=inputs=2:normalize=0:duration=first`,
+    mix,
+  ]);
+  // one fixed gain (two-pass, linear) to -14 LUFS, then a limiter: AAC overshoots on
+  // square waves, so the limit is low; the result is about -16 LUFS, peaks under -3 dB
+  const j = loudness(mix);
+  const norm = [
+    'loudnorm=I=-14:TP=-1.5:LRA=11',
+    `measured_I=${j.input_i}:measured_TP=${j.input_tp}:measured_LRA=${j.input_lra}`,
+    `measured_thresh=${j.input_thresh}:offset=${j.target_offset}:linear=true`,
+  ].join(':');
+  const out = join(WORK, 'sound.wav');
+  ff(['-i', mix, '-af', `${norm},aresample=48000,alimiter=limit=0.5:level=disabled`, out]);
+  return out;
 }
 
 // ---------------------------------------------------------------- sync
@@ -740,23 +864,6 @@ function align(name, s, sourceName = name) {
   return { file: out, v0, marker: s.marker };
 }
 
-/** The music bed, from the first note, exactly as long as the reel. */
-function musicBed(s) {
-  const aud = join(WORK, 'music-audio.webm');
-  const expA = (s.marker - s.audioStart) / 1000;
-  const a0 = nearest(soundStarts(aud, 0.5), expA, 0.8) ?? expA;
-  console.log(`[music] song starts at ${a0.toFixed(2)} s (clock ${expA.toFixed(2)})`);
-  const out = join(WORK, 'music.wav');
-  ff([
-    '-i',
-    aud,
-    '-af',
-    `atrim=start=${a0.toFixed(3)}:duration=${(TOTAL / FPS).toFixed(3)},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo`,
-    out,
-  ]);
-  return out;
-}
-
 // ---------------------------------------------------------------- the edit
 
 // Beat plan: how long each shot is, in beats (one beat = 0.45 s). Shots and captions
@@ -764,7 +871,7 @@ function musicBed(s) {
 // Owner: 18 s and 27 s both felt too fast, so each moment gets ~1.1–1.8 s.
 const B = {
   hook: 6,
-  look: 2.5,
+  look: 2,
   zap: 3,
   ram: 4,
   rgbIn: 2,
@@ -779,11 +886,13 @@ const B = {
   over: 5,
   end: 13,
 };
-const LOOKS = 8;
+// Only a few looks: enough to show that you can dress up (owner: the full list felt long).
+// One of each kind; the booth recording clicks more, these are the shots used.
+const LOOKS = ['Cartoon', 'Cap', 'Sunglasses', 'Space suit'];
 const PLAN = {
   hookEnd: B.hook,
   flashBeat: 3, // the selfie holds for 3 beats, then snaps
-  boothBeats: LOOKS * B.look,
+  boothBeats: LOOKS.length * B.look,
   endBeat: BEATS - B.end,
 };
 const FRAMES = {
@@ -894,42 +1003,42 @@ const ROBOT = F.robot;
 function buildShots(booth, runA, m) {
   const bt = (t) => booth.v0 + (t - booth.marker) / 1000;
   const rt = (t) => runA.v0 + (t - runA.marker) / 1000;
-  const src = runA.file;
   const shots = [];
-  const add = (beats, make) => shots.push({ beats, make });
-  // hook (drawn)
-  add(PLAN.hookEnd, (i, f) => framesPiece(i, 'hook', f));
+  // a drawn piece, or a recorded one (`kind` booth/run, `from` s in the aligned file)
+  const drawn = (beats, dir) =>
+    shots.push({ beats, kind: 'drawn', speed: 1, make: (i, f) => framesPiece(i, dir, f) });
+  const rec = (beats, kind, from, opts = {}, tag) =>
+    shots.push({
+      beats,
+      kind,
+      from,
+      tag,
+      speed: opts.speed ?? 1,
+      make: (i, f) => cutPiece(i, kind === 'booth' ? booth.file : runA.file, from, f, opts),
+    });
+  drawn(PLAN.hookEnd, 'hook');
   // booth montage: one look per shot, all with the same steady framing
   // (owner: zooming in and out between looks felt random)
-  for (const s of booth.shots) add(B.look, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.15, f));
-  // the zap
-  add(B.zap, (i, f) => cutPiece(i, src, rt(m.zapAt) - 0.05, f, F.zap));
-  // RAM pickups
-  add(ramBeats(m), (i, f) => cutPiece(i, src, rt(m.ramAt) - 0.25, f, { zoom: 1.45, ...PLAYER }));
+  for (const label of LOOKS) {
+    const s = booth.shots.find((x) => x.label === label);
+    if (!s) throw new Error(`the booth recording has no "${label}" shot`);
+    rec(B.look, 'booth', bt(s.t) + 0.15);
+  }
+  rec(B.zap, 'run', rt(m.zapAt) - 0.05, F.zap);
+  rec(ramBeats(m), 'run', rt(m.ramAt) - 0.25, { zoom: 1.45, ...PLAYER });
   // the RGB stick: in at normal speed, then slow motion, punched in
-  const rgbIn = B.rgbIn * BEAT;
-  add(B.rgbIn, (i, f) => cutPiece(i, src, rt(m.rgb) - rgbIn + 0.05, f, { zoom: 1.5, ...PLAYER }));
-  add(B.rgbSlow, (i, f) =>
-    cutPiece(i, src, rt(m.rgb) + 0.05, f, { speed: 0.5, zoom: 1.9, ...PLAYER }),
-  );
-  if (m.milestone) add(B.milestone, (i, f) => cutPiece(i, src, rt(m.milestone.t) + 0.05, f));
-  // The Utilizer arrives
-  add(B.rush, (i, f) => cutPiece(i, src, rt(m.rush) - 0.1, f, F.rush));
+  rec(B.rgbIn, 'run', rt(m.rgb) - B.rgbIn * BEAT + 0.05, { zoom: 1.5, ...PLAYER });
+  rec(B.rgbSlow, 'run', rt(m.rgb) + 0.05, { speed: 0.5, zoom: 1.9, ...PLAYER });
+  if (m.milestone) rec(B.milestone, 'run', rt(m.milestone.t) + 0.05);
+  rec(B.rush, 'run', rt(m.rush) - 0.1, F.rush);
   // the beam: ramp into slow motion as it fires
-  const beamIn = B.beamIn * BEAT;
-  add(B.beamIn, (i, f) => cutPiece(i, src, rt(m.laser) - beamIn - 0.1, f, { zoom: 1.4, ...ROBOT }));
-  add(B.beamSlow, (i, f) =>
-    cutPiece(i, src, rt(m.laser) - 0.1, f, { speed: 0.5, zoom: 1.75, ...ROBOT }),
-  );
-  // the cloud drop jump
-  add(B.jump, (i, f) => cutPiece(i, src, rt(m.bombJump) - 0.6, f, { zoom: 1.5, ...PLAYER }));
-  // stumble: "He grabbed X GB!"
-  add(B.grab, (i, f) => cutPiece(i, src, rt(m.stumble) - 0.3, f, { zoom: 1.6, ...ROBOT }));
-  // caught: the pixel crash, then "Utilized!"
-  add(B.caught, (i, f) => cutPiece(i, src, rt(m.caught) - 0.3, f, { zoom: 1.5, ...ROBOT }));
-  add(B.over, (i, f) => cutPiece(i, src, rt(m.utilized) - 0.05, f, F.over));
-  // end card (drawn)
-  add(B.end, (i, f) => framesPiece(i, 'end', f));
+  rec(B.beamIn, 'run', rt(m.laser) - B.beamIn * BEAT - 0.1, { zoom: 1.4, ...ROBOT });
+  rec(B.beamSlow, 'run', rt(m.laser) - 0.1, { speed: 0.5, zoom: 1.75, ...ROBOT });
+  rec(B.jump, 'run', rt(m.bombJump) - 0.6, { zoom: 1.5, ...PLAYER });
+  rec(B.grab, 'run', rt(m.stumble) - 0.3, { zoom: 1.6, ...ROBOT });
+  rec(B.caught, 'run', rt(m.caught) - 0.3, { zoom: 1.5, ...ROBOT });
+  rec(B.over, 'run', rt(m.utilized) - 0.05, F.over, 'over');
+  drawn(B.end, 'end');
   const sum = shots.reduce((n, s) => n + s.beats, 0);
   if (sum !== BEATS) throw new Error(`the shots add up to ${sum} beats, not ${BEATS}`);
   return shots;
@@ -970,19 +1079,18 @@ function captionPlan(m) {
 let boothLog;
 let runLog;
 let runTake;
-let musicLog;
 if (flags.has('--reuse')) {
-  ({ boothLog, runLog, runTake, musicLog } = loadJson('logs'));
+  ({ boothLog, runLog, runTake } = loadJson('logs'));
   // --booth: record only the Photo Booth montage again (implies --redraw)
   if (flags.has('--booth')) {
     console.log('recording the Photo Booth montage…');
     boothLog = await recordBooth();
   }
-  // --redraw: keep the recordings, draw the frames and record the music bed again
+  // --redraw: keep the recordings, draw the frames again
   if (flags.has('--redraw') || flags.has('--booth')) {
-    console.log('drawing frames + recording the music bed…');
-    musicLog = await recordMusicAndFrames(captionPlan(moments(runLog)));
-    saveJson('logs', { boothLog, runLog, runTake, musicLog });
+    console.log('drawing frames…');
+    await recordFrames(captionPlan(moments(runLog)));
+    saveJson('logs', { boothLog, runLog, runTake });
   }
 } else {
   console.log('recording the Photo Booth montage…');
@@ -1002,9 +1110,9 @@ if (flags.has('--reuse')) {
   runTake = best.take;
   if (best.miss.length)
     console.log(`WARNING: the best run take still misses: ${best.miss.join(', ')}`);
-  console.log('drawing frames + recording the music bed…');
-  musicLog = await recordMusicAndFrames(captionPlan(moments(runLog)));
-  saveJson('logs', { boothLog, runLog, runTake, musicLog });
+  console.log('drawing frames…');
+  await recordFrames(captionPlan(moments(runLog)));
+  saveJson('logs', { boothLog, runLog, runTake });
 }
 
 const m = moments(runLog);
@@ -1021,7 +1129,6 @@ console.log(
 
 const booth = { ...align('booth', boothLog), shots: boothLog.shots };
 const runA = align('run', runLog, `run${runTake}`);
-const bed = musicBed(musicLog);
 
 rmSync(join(WORK, 'pieces'), { recursive: true, force: true });
 mkdirSync(join(WORK, 'pieces'));
@@ -1034,15 +1141,19 @@ for (const [i, s] of shots.entries()) {
   beat += s.beats;
 }
 
-// Join the pieces, lay the captions over them, mix the music bed under the game sounds.
+// The sound track: music + every game sound, played clean on the final timeline.
+console.log('recording the sound track…');
+const sound = soundtrack(await recordSoundtrack(soundPlan(shots, runA, runLog)));
+
+// Join the pieces and lay the captions over them; the sound track goes under.
 const caps = captionPlan(m);
 const inputs = pieces.flatMap((p) => ['-i', p]);
 caps.forEach((_, i) =>
   inputs.push('-i', join(WORK, 'captions', `${String(i).padStart(4, '0')}.png`)),
 );
-inputs.push('-i', bed);
+inputs.push('-i', sound);
 const n = pieces.length;
-let filter = `${pieces.map((_, i) => `[${i}:v][${i}:a]`).join('')}concat=n=${n}:v=1:a=1[v0][sfx]`;
+let filter = `${pieces.map((_, i) => `[${i}:v]`).join('')}concat=n=${n}:v=1:a=0[v0]`;
 caps.forEach((c, i) => {
   const a = (frameAt(c.from) / FPS).toFixed(3);
   const b = (frameAt(c.to) / FPS - 0.001).toFixed(3);
@@ -1050,7 +1161,7 @@ caps.forEach((c, i) => {
 });
 const musicIn = n + caps.length;
 filter += `;[v${caps.length}]format=yuv420p[vout]`;
-filter += `;[${musicIn}:a]volume=1.0[mb];[sfx][mb]amix=inputs=2:normalize=0:duration=first,${LOUD}[aout]`;
+filter += `;[${musicIn}:a]anull[aout]`;
 const reel = join(OUT, `pixel-me-in-${F.name}.mp4`);
 ff([
   ...inputs,
