@@ -115,7 +115,7 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
   await wait(300);
   boothAt = Date.now();
 
-  caption('A game idea: YOU in a pixel game');
+  caption('They want your RAM. Not today.');
   await wait(2600);
   caption('Your selfie, made into pixel art');
   for (const look of ['Cartoon', 'Photo', 'Pixel']) {
@@ -145,19 +145,19 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
   await zoom(1);
   await click('button', 'Play');
   await page.locator('#hud').waitFor({ state: 'visible', timeout: 20_000 });
-  caption('Run, jump, slide, grab gears');
+  caption('Grab every stick of RAM');
   await page
     .locator('.chase')
     .first()
     .waitFor({ timeout: 30_000 })
     .catch(() => {});
-  caption('Dodge the robot!');
+  caption('…before The Utilizer does!');
   await page.getByRole('heading', { name: 'Utilized!' }).waitFor({ timeout: 60_000 });
   caption('Your photo never leaves your phone');
   await wait(2600);
 
   // End card + a sound at the same moment (also used to check the audio sync).
-  caption('Pixel Me In · a game idea');
+  caption('Pixel Me In: Save Your RAM');
   await page.evaluate(async (big) => {
     const { sfx } = await import('/src/audio/sfx.ts');
     const { playBoothMusic } = await import('/src/audio/music.ts');
@@ -166,7 +166,7 @@ async function record(name, { opts, fontSize, scale, boothZoom }) {
       justify-content:center;gap:${big ? 22 : 16}px;padding:24px;background:#1b1f3b;color:#f4f1e8;
       font-family:"Pixelify Sans",monospace;text-align:center`;
     el.innerHTML = `<div style="font-size:${big ? 76 : 50}px;line-height:1.1;color:#e8c547;text-shadow:5px 5px 0 #14121c">Would you play this?</div>
-      <div style="font-size:${big ? 32 : 24}px">Your face in a pixel-art runner</div>
+      <div style="font-size:${big ? 32 : 24}px">Your face. Your RAM. Your device.</div>
       <div style="font-size:${big ? 26 : 19}px;opacity:.85">Free · in your browser · photo stays on your device</div>
       <div style="margin-top:${big ? 18 : 12}px;font-size:${big ? 32 : 24}px;color:#14121c;background:#e8c547;
         border:4px solid #14121c;box-shadow:6px 6px 0 #14121c;padding:10px 20px">Tell me in the comments!</div>`;
