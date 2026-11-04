@@ -2,6 +2,14 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Search engines, stats check, link previews
+
+- Owner set up Google Search Console (Domain property `madhavkwatra.in`, DNS TXT at Netlify DNS – checked it resolves) and Bing Webmaster Tools (import from Google; it imported the root site, so the `play.` sitemap may need its own entry).
+- Vercel Web Analytics confirmed live: a test visit posted `/_vercel/insights/view` → 200. PostHog drops headless test visits as bots, as designed; real visits count.
+- WhatsApp preview shows title, description and the new picture; its square crop cuts the title (centring it is offered).
+- GitHub repo homepage + description now point to the live game.
+- Marketing images + Reel moved to a new session (prompt given to the owner).
+
 ## 2026-11-04 – Live at play.madhavkwatra.in
 
 - Deployed on Vercel from GitHub `main` (domain session set up the domain; DNS at Netlify DNS). Checked live: pages, MediaPipe files, headers, the `/ph` PostHog proxy and a full photo → booth → run on desktop + phone with 0 other hosts and 0 errors.
