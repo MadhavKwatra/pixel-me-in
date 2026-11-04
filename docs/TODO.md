@@ -16,7 +16,8 @@
 - [x] Videos: start in the Photo Booth, game sounds + music, captions in a band above the game, "Would you play this?" end card.
 - [x] Touch buttons on/off in the Pause menu and during the tutorial.
 - [ ] Owner: post the demo videos and collect answers to "Would you play this?".
-- [ ] Marketing pack (new session): one "everything" post, carousel, story, X/LinkedIn image, before/after, a 15–20 s Reel. Outputs in `promo/` (git-ignored).
+- [x] Marketing pack: "everything" post, 5-slide carousel, story, X/LinkedIn image, before/after (`node scripts/promo-images.mjs`) and an 18 s Reel (`node scripts/promo-reel.mjs`); captions + hashtags in `promo/captions.md`. All in `promo/` (git-ignored).
+- [ ] Post the launch pack (owner): Reel first, carousel 1–2 days later, story with the link sticker.
 
 ## Save Your RAM – release 2
 

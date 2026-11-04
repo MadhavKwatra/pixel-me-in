@@ -14,7 +14,7 @@ export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Runs in the page before anything else: every Web Audio context also feeds a
  * MediaRecorder, so the game's own sounds and music end up in the video.
- * `promo.music === false` (set by the caller) turns the game music off.
+ * `opts.settings` is merged into the saved settings (e.g. { music: false }).
  */
 export function tapAudio(opts = {}) {
   const promo = { chunks: [], start: 0, rec: null };
@@ -47,7 +47,7 @@ export function tapAudio(opts = {}) {
     'pmi:stats',
     JSON.stringify({ best: 0, totalGears: 200, totalDistance: 6000, runs: 12 }),
   );
-  if (opts.music === false) {
+  if (opts.settings) {
     const key = 'pmi:settings';
     let saved;
     try {
@@ -55,7 +55,7 @@ export function tapAudio(opts = {}) {
     } catch {
       saved = null;
     }
-    localStorage.setItem(key, JSON.stringify({ ...saved, music: false }));
+    localStorage.setItem(key, JSON.stringify({ ...saved, ...opts.settings }));
   }
 }
 
