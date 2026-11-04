@@ -88,4 +88,14 @@ describe('robot', () => {
     expect(BOMB_FLIGHT_MS).toBeGreaterThanOrEqual(700);
     expect(RUSH_ATTACK_EVERY_MS).toBeGreaterThan(LASER_WARN_MS + 500);
   });
+
+  it('a thrown bomb lands exactly on its mark, after an arc', async () => {
+    const { bombArc } = await import('../src/game/rules');
+    const from = { x: 100, y: 220 };
+    const to = { x: 430, y: 292 };
+    expect(bombArc(0, from, to, 110)).toEqual(from);
+    expect(bombArc(1, from, to, 110)).toEqual(to);
+    expect(bombArc(1.4, from, to, 110)).toEqual(to); // late frames stay on the mark
+    expect(bombArc(0.5, from, to, 110).y).toBeLessThan(from.y - 50); // high in the middle
+  });
 });

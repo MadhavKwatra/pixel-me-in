@@ -12,6 +12,7 @@ import { computeView, playerX, type View } from '../view';
 import { ROBOT_WALK, type RobotFrame } from '../../art/robot';
 import {
   BOMB_FLIGHT_MS,
+  bombArc,
   crashOutcome,
   DANGER_MS,
   LASER_FIRE_MS,
@@ -101,7 +102,12 @@ export class RunScene extends Phaser.Scene {
     fireAt: number;
     endAt: number;
   } | null = null;
-  private marks: { mark: Phaser.GameObjects.Image; landAt: number }[] = [];
+  private marks: {
+    mark: Phaser.GameObjects.Image;
+    bomb: Phaser.GameObjects.Image;
+    from: { x: number; y: number };
+    thrownAt: number;
+  }[] = [];
   private autopilotUntil = 0;
   private dustAt = 0;
   private lineAt = 0;
@@ -297,6 +303,15 @@ export class RunScene extends Phaser.Scene {
       if (left < -10 || left > 130) continue;
       if (!high && left < 95 && !o.getData('ap')) {
         o.setData('ap', true);
+        this.player.pressJump(time);
+        this.player.softReleaseJump();
+      }
+    }
+    // A bomb mark is a low obstacle that is still on its way: jump at the same distance.
+    for (const m of this.marks) {
+      const left = m.mark.x - m.mark.displayWidth / 2 - px;
+      if (left > -10 && left < 95 && !m.mark.getData('ap')) {
+        m.mark.setData('ap', true);
         this.player.pressJump(time);
         this.player.softReleaseJump();
       }
@@ -585,6 +600,7 @@ export class RunScene extends Phaser.Scene {
     s.enableBody(true, x, y, true, true);
     s.setAngle(0).setAlpha(1).setScale(1);
     s.setData('lesson', null);
+    s.setData('ap', false); // pooled sprites: forget the old autopilot jump
     this.tweens.killTweensOf(s);
   }
 
@@ -939,34 +955,29 @@ export class RunScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
     });
-    this.marks.push({ mark, landAt: time + BOMB_FLIGHT_MS });
-    // The bomb flies in an arc from the robot to the mark.
-    const bomb = this.add.image(this.robot.x + 20, GROUND_Y - 80, 'bomb').setDepth(23);
-    this.tweens.add({
-      targets: bomb,
-      x: mark.x - this.speed * (BOMB_FLIGHT_MS / 1000) * 0.6,
-      duration: BOMB_FLIGHT_MS,
-      ease: 'Linear',
-    });
-    this.tweens.add({
-      targets: bomb,
-      y: GROUND_Y - 190,
-      duration: BOMB_FLIGHT_MS / 2,
-      ease: 'Quad.out',
-      yoyo: true,
-      onComplete: () => bomb.destroy(),
-    });
+    // The bomb flies in an arc from the robot's hand to the mark. Its position is
+    // set every frame from the mark's live x (the mark scrolls with the world).
+    const from = { x: this.robot.x + 20, y: GROUND_Y - 80 };
+    const bomb = this.add.image(from.x, from.y, 'bomb').setDepth(23);
     this.tweens.add({ targets: bomb, angle: 540, duration: BOMB_FLIGHT_MS });
+    this.marks.push({ mark, bomb, from, thrownAt: time });
     this.emit(EVENTS.hint, 'bomb');
   }
 
   private updateAttacks(time: number) {
     const dt = this.game.loop.delta / 1000;
     // marks scroll with the world, then turn into a bomb on the ground
-    this.marks = this.marks.filter(({ mark, landAt }) => {
+    const bombH = this.textures.get('bomb').getSourceImage().height;
+    this.marks = this.marks.filter(({ mark, bomb, from, thrownAt }) => {
       mark.x -= this.speed * dt * this.slow;
-      if (time < landAt) return true;
+      // Lands exactly where the ground bomb will sit (on the mark).
+      const p = (time - thrownAt) / BOMB_FLIGHT_MS;
+      const at = bombArc(p, from, { x: mark.x, y: GROUND_Y - bombH / 2 }, 110);
+      bomb.setPosition(at.x, at.y);
+      if (p < 1) return true;
+      bomb.destroy();
       const b = this.addObstacle('bomb', mark.x, false, null);
+      b.setData('ap', mark.getData('ap'));
       this.tweens.add({
         targets: b,
         scale: { from: 1.15, to: 1 },
@@ -1023,7 +1034,10 @@ export class RunScene extends Phaser.Scene {
 
   private clearAttacks() {
     this.clearLaser();
-    this.marks.forEach((m) => m.mark.destroy());
+    this.marks.forEach((m) => {
+      m.mark.destroy();
+      m.bomb.destroy();
+    });
     this.marks = [];
   }
 

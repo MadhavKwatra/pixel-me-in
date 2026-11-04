@@ -145,6 +145,23 @@ export const LASER_WARN_MS = 800;
 export const LASER_FIRE_MS = 350;
 export const BOMB_FLIGHT_MS = 900;
 
+/**
+ * Where a thrown bomb is at progress `p` (0 → 1): a straight line from `from`
+ * to `to` plus an arc `height` px tall. At p = 1 it is exactly on `to`.
+ */
+export function bombArc(
+  p: number,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  height: number,
+): { x: number; y: number } {
+  const t = Math.min(1, Math.max(0, p));
+  return {
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t - 4 * height * t * (1 - t),
+  };
+}
+
 export type RobotAttack = 'laser' | 'bomb';
 
 export function pickAttack(rng: () => number, last: RobotAttack | null): RobotAttack {
