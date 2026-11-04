@@ -299,7 +299,7 @@ async function drawAll({ photoB64, mime }) {
     const points = [
       'Free',
       'Plays in your browser',
-      'No install',
+      'No install needed',
       'Your photo never leaves your device',
       'Open source',
     ];
@@ -368,7 +368,7 @@ async function drawAll({ photoB64, mime }) {
     shadowBand(o, 1230, 120, 1080, 0.85);
     fitText(
       o,
-      'Made on your phone. Your photo never leaves it.',
+      'Made on your device. Your photo never leaves it.',
       540,
       1305,
       40,
@@ -415,7 +415,7 @@ async function drawAll({ photoB64, mime }) {
       );
     });
     shadowBand(o, 1250, 100, 1080, 0.9);
-    text(o, 'The Photo Booth: free, no sign-up', 540, 1316, 40, C.paper, 'center');
+    text(o, 'Dress up in the Photo Booth', 540, 1316, 40, C.paper, 'center');
     save('carousel-3-1080x1350', c);
   }
   // Slide 4: gameplay (3× pixels, so the action is big)
@@ -444,13 +444,13 @@ async function drawAll({ photoB64, mime }) {
   // Slide 5: privacy, open source, call to action
   {
     const [c, o] = canvas(1080, 1350);
-    text(o, 'Free. Private.', 540, 130, 96, C.yellow, 'center');
+    text(o, 'Free to play.', 540, 130, 96, C.yellow, 'center');
     text(o, 'Open source.', 540, 240, 96, C.paper, 'center');
     const items = [
-      'Plays in your browser, no install',
-      'No account, no sign-up',
+      'Plays in your browser, no install needed',
+      'No account needed',
       'Your photo never leaves your device',
-      'The pixel art is made on your phone',
+      'The pixel art is made on your device',
       'Code on GitHub: pixel-me-in',
     ];
     items.forEach((s, i) => {
@@ -549,7 +549,16 @@ async function drawAll({ photoB64, mime }) {
     const low = scene(540, 160, 100, 0, (s) => ramArc(s, 60, 100, 12, 38, 12, 6, 40));
     up(o, low, 0, 1040, 2);
     shadowBand(o, 1230, 120, 1080, 0.9);
-    fitText(o, `Made on my phone in seconds · ${ADDRESS}`, 540, 1305, 40, C.paper, 1000, 'center');
+    fitText(
+      o,
+      `Made in seconds on my own device · ${ADDRESS}`,
+      540,
+      1305,
+      40,
+      C.paper,
+      1000,
+      'center',
+    );
     save('before-after-1080x1350', c);
   }
   return result;

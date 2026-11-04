@@ -1,18 +1,18 @@
-// Dev tool: a fast promo clip (~18 s, loops) from the real game, for Reels or wide feeds.
-//   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse] [--guides]
+// Dev tool: a promo clip (~27 s, loops) from the real game, for Reels or wide feeds.
+//   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse [--redraw]] [--guides]
 //   (needs `npm run dev` + ffmpeg)
 // Output (git-ignored: it shows the owner's face):
 //   promo/videos/pixel-me-in-reel.mp4             1080×1920, Instagram Reels / Stories
 //   promo/videos/pixel-me-in-reel-landscape.mp4   1920×1080 (--landscape), X / Threads / LinkedIn
-// Work files: promo/videos/reel-work/ or landscape-work/ (recordings, frames; `--reuse` skips
-// the recording and only cuts again). Review: test-results/reel/ (contact sheet, safe-zone
-// copy with --guides).
+// Work files: promo/videos/reel-work/ or landscape-work/ (recordings, frames). `--reuse`
+// skips the recording and only cuts again; `--redraw` also redraws the frames and captions.
+// Review: promo/review/ (contact sheet, safe-zone copy with --guides).
 //
 // How: three short browser sessions (Photo Booth montage, the zap + a run on autopilot,
 // a clean music loop), each with a flash + shutter mark to line up picture and sound.
 // Every game sound and event is logged with its time, so the cut finds the moments
 // (RAM, 8 GB RGB stick, beam, cloud drop, stumble, "Utilized!") by itself. The edit
-// is on a 132 BPM beat grid (the Your Desk song): 40 beats, so the music loops cleanly.
+// is on a 132 BPM beat grid (the Your Desk song): 60 beats, so the music loops cleanly.
 import { chromium, devices } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import {
@@ -82,7 +82,7 @@ const FORMATS = {
       lines: { title: 400, sub: 520, play: 680, url: 810, last: 940 },
       last: 'link in bio',
     },
-    sheet: 'fps=2,scale=216:384,tile=9x4',
+    sheet: 'fps=2,scale=216:384,tile=9x6',
     guides: [
       'drawbox=x=0:y=0:w=1080:h=270:color=red@0.25:t=fill',
       'drawbox=x=0:y=1250:w=1080:h=670:color=red@0.25:t=fill',
@@ -126,7 +126,7 @@ const FORMATS = {
       lines: { title: 140, sub: 250, play: 350, url: 450, last: 540 },
       last: 'Your photo never leaves your device',
     },
-    sheet: 'fps=2,scale=320:180,tile=6x6',
+    sheet: 'fps=2,scale=320:180,tile=6x9',
     guides: ['drawbox=x=96:y=54:w=1728:h=972:color=lime@0.9:t=4'],
   },
 };
@@ -134,13 +134,14 @@ const F = flags.has('--landscape') ? FORMATS.landscape : FORMATS.vertical;
 
 const OUT = 'promo/videos';
 const WORK = join(OUT, F === FORMATS.landscape ? 'landscape-work' : 'reel-work');
-const CHECK = 'test-results/reel';
+const CHECK = 'promo/review';
 for (const d of [WORK, CHECK]) mkdirSync(d, { recursive: true });
 
 const BPM = 132;
 const BEAT = 60 / BPM;
 const FPS = 30;
-const BEATS = 40;
+// 60 beats (~27 s): time to read every caption; a whole number of bars, so it loops.
+const BEATS = 60;
 const { W, H, VIEW } = F;
 // Recording settings: no music (the music bed is added in the edit), no touch pad.
 const QUIET = { music: false, touchButtons: 'never' };
@@ -361,6 +362,7 @@ const missing = (m) => NEEDED.filter((k) => !m[k]);
 async function renderFrames(page, captions) {
   await page.evaluate(
     async ({ photoB64, BEAT, FPS, W, H, frameAtList, captions, L }) => {
+      // BEAT: the end card pops its lines in on the beat
       const { ZONES, LAYER_SIZE, GROUND_TILE, SPRITES, paint } = await import('/src/art/world.ts');
       const { drawRobotSheet, ROBOT_W, ROBOT_H } = await import('/src/art/robot.ts');
       const { loadAvatar } = await import('/src/face/faceStore.ts');
@@ -505,7 +507,7 @@ async function renderFrames(page, captions) {
 
       // ---- hook: photo → flash → mosaic → chunky pixels → you, running in the game
       const hookN = frameAtList.hookEnd;
-      const beat1 = Math.round(BEAT * FPS);
+      const beat1 = frameAtList.flash;
       for (let f = 0; f < hookN; f++) {
         let c;
         if (f < beat1) c = photoFrame(1 + 0.05 * (f / beat1));
@@ -657,21 +659,21 @@ async function recordMusicAndFrames(captions) {
       );
       await openBooth(page, `${base}/?demo`, photo);
       await renderFrames(page, captions);
-      // A clean music bed: the Your Desk song, with the shutter on beat 1 (the hook's
-      // flash) and the power-up jingle when the end card shows.
+      // A clean music bed: the Your Desk song, with the shutter on the hook's flash
+      // and the power-up jingle when the end card shows.
       const start = await page.evaluate(
-        async ({ BEAT, endBeat }) => {
+        async ({ BEAT, endBeat, flashBeat }) => {
           const music = await import('/src/audio/music.ts');
           const { sfx } = await import('/src/audio/sfx.ts');
           music.stopMusic();
           await new Promise((r) => setTimeout(r, 1500));
           music.playZoneMusic(0);
           const t = Date.now();
-          setTimeout(() => sfx.shutter(), BEAT * 1000);
+          setTimeout(() => sfx.shutter(), flashBeat * BEAT * 1000);
           setTimeout(() => sfx.power(), endBeat * BEAT * 1000);
           return t;
         },
-        { BEAT, endBeat: PLAN.endBeat },
+        { BEAT, endBeat: PLAN.endBeat, flashBeat: PLAN.flashBeat },
       );
       await wait((BEATS * BEAT + 2) * 1000);
       return { marker: start };
@@ -756,14 +758,35 @@ function musicBed(s) {
 
 // ---------------------------------------------------------------- the edit
 
-// Beat plan (40 beats). Recorded shots get their source times after the recording.
+// Beat plan: how long each shot is, in beats (one beat = 0.45 s). Shots and captions
+// both read this table, so they always line up. Without a milestone, RAM gets its beats.
+const B = {
+  hook: 5,
+  look: 1.5,
+  zap: 3,
+  ram: 3,
+  rgbIn: 2,
+  rgbSlow: 2,
+  milestone: 3,
+  rush: 3,
+  beamIn: 2,
+  beamSlow: 2,
+  jump: 3,
+  grab: 3,
+  caught: 2,
+  over: 4,
+  end: 11,
+};
+const LOOKS = 8;
 const PLAN = {
-  hookEnd: 3,
-  boothBeats: 8,
-  endBeat: 32,
+  hookEnd: B.hook,
+  flashBeat: 2, // the selfie holds for 2 beats, then snaps
+  boothBeats: LOOKS * B.look,
+  endBeat: BEATS - B.end,
 };
 const FRAMES = {
   hookEnd: frameAt(PLAN.hookEnd),
+  flash: frameAt(PLAN.flashBeat),
   endLen: frameAt(BEATS) - frameAt(PLAN.endBeat),
 };
 const TOTAL = frameAt(BEATS);
@@ -869,76 +892,75 @@ const ROBOT = F.robot;
 function buildShots(booth, runA, m) {
   const bt = (t) => booth.v0 + (t - booth.marker) / 1000;
   const rt = (t) => runA.v0 + (t - runA.marker) / 1000;
+  const src = runA.file;
   const shots = [];
   const add = (beats, make) => shots.push({ beats, make });
   // hook (drawn)
   add(PLAN.hookEnd, (i, f) => framesPiece(i, 'hook', f));
-  // booth montage: 1 beat per look, every other one punched in on the preview
+  // booth montage: one look per 1.5 beats, every other one punched in on the preview
   booth.shots.forEach((s, j) =>
-    add(1, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.12, f, j % 2 ? F.boothZoom : {})),
+    add(B.look, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.12, f, j % 2 ? F.boothZoom : {})),
   );
-  // the zap, a bit faster
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.zapAt) - 0.05, f, { speed: 1.35, ...F.zap }));
-  // RAM pickups (no milestone → this shot gets its 2 beats)
-  const ramBeats = m.milestone ? 2 : 4;
-  add(ramBeats, (i, f) =>
-    cutPiece(i, runA.file, rt(m.ramAt) - 0.25, f, { speed: 1.15, zoom: 1.45, ...PLAYER }),
-  );
+  // the zap
+  add(B.zap, (i, f) => cutPiece(i, src, rt(m.zapAt) - 0.05, f, F.zap));
+  // RAM pickups
+  add(ramBeats(m), (i, f) => cutPiece(i, src, rt(m.ramAt) - 0.25, f, { zoom: 1.45, ...PLAYER }));
   // the RGB stick: in at normal speed, then slow motion, punched in
-  add(1, (i, f) => cutPiece(i, runA.file, rt(m.rgb) - 0.5, f, { zoom: 1.5, ...PLAYER }));
-  add(2, (i, f) =>
-    cutPiece(i, runA.file, rt(m.rgb) - 0.5 + BEAT, f, { speed: 0.5, zoom: 1.9, ...PLAYER }),
+  const rgbIn = B.rgbIn * BEAT;
+  add(B.rgbIn, (i, f) => cutPiece(i, src, rt(m.rgb) - rgbIn + 0.05, f, { zoom: 1.5, ...PLAYER }));
+  add(B.rgbSlow, (i, f) =>
+    cutPiece(i, src, rt(m.rgb) + 0.05, f, { speed: 0.5, zoom: 1.9, ...PLAYER }),
   );
-  if (m.milestone) add(2, (i, f) => cutPiece(i, runA.file, rt(m.milestone.t) + 0.05, f));
+  if (m.milestone) add(B.milestone, (i, f) => cutPiece(i, src, rt(m.milestone.t) + 0.05, f));
   // The Utilizer arrives
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.rush) - 0.1, f, F.rush));
+  add(B.rush, (i, f) => cutPiece(i, src, rt(m.rush) - 0.1, f, F.rush));
   // the beam: ramp into slow motion as it fires
-  add(1, (i, f) => cutPiece(i, runA.file, rt(m.laser) - 0.6, f, { zoom: 1.4, ...ROBOT }));
-  add(2, (i, f) =>
-    cutPiece(i, runA.file, rt(m.laser) - 0.6 + BEAT, f, { speed: 0.5, zoom: 1.75, ...ROBOT }),
+  const beamIn = B.beamIn * BEAT;
+  add(B.beamIn, (i, f) => cutPiece(i, src, rt(m.laser) - beamIn - 0.1, f, { zoom: 1.4, ...ROBOT }));
+  add(B.beamSlow, (i, f) =>
+    cutPiece(i, src, rt(m.laser) - 0.1, f, { speed: 0.5, zoom: 1.75, ...ROBOT }),
   );
   // the cloud drop jump
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.bombJump) - 0.4, f, { zoom: 1.5, ...PLAYER }));
+  add(B.jump, (i, f) => cutPiece(i, src, rt(m.bombJump) - 0.6, f, { zoom: 1.5, ...PLAYER }));
   // stumble: "He grabbed X GB!"
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.stumble) - 0.2, f, { zoom: 1.6, ...ROBOT }));
+  add(B.grab, (i, f) => cutPiece(i, src, rt(m.stumble) - 0.3, f, { zoom: 1.6, ...ROBOT }));
   // caught: the pixel crash, then "Utilized!"
-  add(1, (i, f) => cutPiece(i, runA.file, rt(m.caught) - 0.25, f, { zoom: 1.5, ...ROBOT }));
-  add(2, (i, f) => cutPiece(i, runA.file, rt(m.utilized) - 0.05, f, F.over));
+  add(B.caught, (i, f) => cutPiece(i, src, rt(m.caught) - 0.3, f, { zoom: 1.5, ...ROBOT }));
+  add(B.over, (i, f) => cutPiece(i, src, rt(m.utilized) - 0.05, f, F.over));
   // end card (drawn)
-  add(BEATS - PLAN.endBeat, (i, f) => framesPiece(i, 'end', f));
+  add(B.end, (i, f) => framesPiece(i, 'end', f));
   const sum = shots.reduce((n, s) => n + s.beats, 0);
   if (sum !== BEATS) throw new Error(`the shots add up to ${sum} beats, not ${BEATS}`);
   return shots;
 }
 
+/** RAM gets the milestone's beats when there is no milestone shot. */
+const ramBeats = (m) => B.ram + (m.milestone ? 0 : B.milestone);
+
 /** Captions on the beat grid (from/to in beats). `role` picks the place in the layout. */
 function captionPlan(m) {
-  let b = PLAN.hookEnd + PLAN.boothBeats + 2; // after the zap
-  const list = [
-    { from: 0, to: 3, role: 'hook', lines: ['I turned my selfie', 'into a game'] },
-    { from: 3, to: 11, role: 'booth', lines: ['Pick your look'] },
-  ];
-  const ramBeats = m.milestone ? 2 : 4;
-  list.push({ from: b, to: b + ramBeats, role: 'top', lines: ['Save your RAM'] });
-  b += ramBeats;
-  list.push({ from: b, to: b + 3, role: 'top', lines: ['8 GB', 'RGB stick!'] });
-  b += 3;
+  const list = [];
+  let b = 0;
+  const say = (beats, role, lines, more = {}) => {
+    if (lines) list.push({ from: b, to: b + beats, role, lines, ...more });
+    b += beats;
+  };
+  say(B.hook, 'hook', ['I turned my selfie', 'into a game character']);
+  say(PLAN.boothBeats, 'booth', ['Pick your look']);
+  say(B.zap, null, null);
+  say(ramBeats(m), 'top', ['Save your RAM']);
+  say(B.rgbIn + B.rgbSlow, 'top', ['8 GB', 'RGB stick!']);
   if (m.milestone) {
     const parts = m.milestone.text.split(' – ');
-    list.push({ from: b, to: b + 2, role: 'mid', lines: [`${parts[0]} –`, parts[1]] });
-    b += 2;
+    say(B.milestone, 'mid', [`${parts[0]} –`, parts[1]]);
   }
-  list.push({ from: b, to: b + 2, role: 'mid', lines: ['The Utilizer', 'wants it!'] });
-  b += 2;
-  list.push({ from: b, to: b + 3, role: 'top', lines: ['Slide!'], size: 120 });
-  b += 3;
-  list.push({ from: b, to: b + 2, role: 'top', lines: ['Jump!'], size: 120 });
-  b += 2;
+  say(B.rush, 'mid', ['The Utilizer', 'wants your RAM!']);
+  say(B.beamIn + B.beamSlow, 'top', ['Slide!'], { size: 120 });
+  say(B.jump, 'top', ['Jump!'], { size: 120 });
   const lost = m.grabbed?.text.match(/(\d+) GB/)?.[1];
-  const grab = lost ? ['He grabbed', `${lost} GB!`] : ['Ouch!'];
-  list.push({ from: b, to: b + 2, role: 'top', lines: grab });
-  b += 3; // the grab, then the pixel crash
-  list.push({ from: b, to: b + 2, role: 'utilized', lines: ['UTILIZED!'], colours: ['#ff5a5a'] });
+  say(B.grab, 'top', lost ? ['He grabbed', `${lost} GB!`] : ['Ouch!']);
+  say(B.caught, null, null);
+  say(B.over, 'utilized', ['UTILIZED!'], { colours: ['#ff5a5a'] });
   return list;
 }
 
@@ -950,6 +972,12 @@ let runTake;
 let musicLog;
 if (flags.has('--reuse')) {
   ({ boothLog, runLog, runTake, musicLog } = loadJson('logs'));
+  // --redraw: keep the recordings, draw the frames and record the music bed again
+  if (flags.has('--redraw')) {
+    console.log('drawing frames + recording the music bed…');
+    musicLog = await recordMusicAndFrames(captionPlan(moments(runLog)));
+    saveJson('logs', { boothLog, runLog, runTake, musicLog });
+  }
 } else {
   console.log('recording the Photo Booth montage…');
   boothLog = await recordBooth();
