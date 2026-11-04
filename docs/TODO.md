@@ -21,7 +21,8 @@
 
 - [ ] **Domain**: start with `play.madhavkwatra.in`; later maybe the game name (`pixelmein.madhavkwatra.in`, or its own domain – check if `pixelme.in` is free). Separate deploy + one CNAME; link from the portfolio. Saved characters and scores are tied to the web address – moving later resets players' saves, so pick the final address before sharing widely (redirect the old one).
 - [ ] **Deploy** (Vercel or Netlify work with a private repo; GitHub Pages on a free account needs a public repo).
-- [ ] **Repo**: private until launch, then public (README GIF, topics, social preview image, live link).
+- [x] **Repo** is public: https://github.com/MadhavKwatra/pixel-me-in (owner, 2026-11-04). Links on About, Privacy, footer, Settings.
+- [ ] Repo extras: README GIF, social preview image, live link once deployed.
 - [ ] **SEO + link previews** (once the domain exists): absolute `og:image` and `og:url`, canonical on every page, per-page preview images (1200×630 with the creator character), `sitemap.xml`, Google Search Console + Bing Webmaster Tools, test previews (opengraph.xyz, LinkedIn Post Inspector, WhatsApp).
 - [ ] **Analytics** – pick one (all need a CSP `connect-src` allow-list for that domain, a Privacy page update and an e2e allow-list; never any image or face data):
   - PostHog – events, funnels, retention; turn off session replay and autocapture, cookieless mode, EU hosting. Most insight.

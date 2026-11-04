@@ -22,6 +22,8 @@
 Needs Node.js 20+.
 
 ```bash
+git clone https://github.com/MadhavKwatra/pixel-me-in.git
+cd pixel-me-in
 npm install        # also copies the MediaPipe runtime into public/mediapipe/wasm
 npm run dev        # http://localhost:5190
 ```

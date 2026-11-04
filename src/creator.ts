@@ -15,8 +15,8 @@ export const CREATOR = {
  */
 export const FEEDBACK_URL = '';
 
-/** Public repository. Empty until the repo is public = GitHub links are hidden. */
-export const REPO_URL = '';
+/** Public repository (empty = GitHub links are hidden). */
+export const REPO_URL = 'https://github.com/MadhavKwatra/pixel-me-in';
 
 /** Where the game lives. Used in share texts and links. */
 export function gameUrl(): string {

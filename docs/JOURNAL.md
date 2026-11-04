@@ -2,6 +2,13 @@
 
 Newest first. What changed, why, and what broke.
 
+## 2026-11-04 – Bomb fix; the repo goes public
+
+- Bug: the thrown bomb did not land on its red ring. The flying bomb tweened to a fixed spot guessed once (`speed × time × 0.6`) while the ring scrolled with the world, and the arc ended 80 px above the ground. Now the bomb's position is set every frame from the ring's live position (`bombArc` in `rules.ts`, unit-tested) and it lands on the ground exactly on the ring.
+- Demo autopilot: jumps bomb rings, and pooled obstacles forget an old "already jumped" flag.
+- Before going public, checked the whole git history: no emails (commits use the GitHub noreply address), no local paths, no keys, no photos except the owner-approved pixel character. The game makes no network requests (`connect-src 'self'`; only links and the phone's own share menu).
+- Repo link (`REPO_URL`) shown on About ("Code on GitHub", "How to help", "Report a bug"), Privacy (links `docs/PRIVACY.md`), footer, Settings. README has clone steps.
+
 ## 2026-11-02 – The real cause of the vanishing face in videos
 
 - Owner: in the landscape video the face still disappeared while running (the earlier blink/autopilot fix was not the cause).
