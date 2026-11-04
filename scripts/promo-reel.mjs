@@ -1,18 +1,19 @@
-// Dev tool: a promo clip (~27 s, loops) from the real game, for Reels or wide feeds.
-//   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse [--redraw]] [--guides]
+// Dev tool: a promo clip (~36 s, loops) from the real game, for Reels or wide feeds.
+//   node scripts/promo-reel.mjs [photo] [baseUrl] [--landscape] [--reuse [--redraw|--booth]] [--guides]
 //   (needs `npm run dev` + ffmpeg)
 // Output (git-ignored: it shows the owner's face):
 //   promo/videos/pixel-me-in-reel.mp4             1080×1920, Instagram Reels / Stories
 //   promo/videos/pixel-me-in-reel-landscape.mp4   1920×1080 (--landscape), X / Threads / LinkedIn
 // Work files: promo/videos/reel-work/ or landscape-work/ (recordings, frames). `--reuse`
-// skips the recording and only cuts again; `--redraw` also redraws the frames and captions.
+// skips the recording and only cuts again; `--redraw` also redraws the frames and captions;
+// `--booth` also records the Photo Booth montage again.
 // Review: promo/review/ (contact sheet, safe-zone copy with --guides).
 //
 // How: three short browser sessions (Photo Booth montage, the zap + a run on autopilot,
 // a clean music loop), each with a flash + shutter mark to line up picture and sound.
 // Every game sound and event is logged with its time, so the cut finds the moments
 // (RAM, 8 GB RGB stick, beam, cloud drop, stumble, "Utilized!") by itself. The edit
-// is on a 132 BPM beat grid (the Your Desk song): 60 beats, so the music loops cleanly.
+// is on a 132 BPM beat grid (the Your Desk song): 80 beats, so the music loops cleanly.
 import { chromium, devices } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import {
@@ -52,7 +53,6 @@ const FORMATS = {
     H: 1920,
     VIEW: { width: 540, height: 960 },
     device: devices['Pixel 7'],
-    boothZoom: { zoom: 1.3, cx: 270, cy: 330 },
     zap: { zoom: 2, cx: 270, cy: 470 },
     // the player stands at about (150, 540), ground at 612
     player: { cx: 210, cy: 520 },
@@ -82,7 +82,7 @@ const FORMATS = {
       lines: { title: 400, sub: 520, play: 680, url: 810, last: 940 },
       last: 'link in bio',
     },
-    sheet: 'fps=2,scale=216:384,tile=9x6',
+    sheet: 'fps=2,scale=216:384,tile=10x8',
     guides: [
       'drawbox=x=0:y=0:w=1080:h=270:color=red@0.25:t=fill',
       'drawbox=x=0:y=1250:w=1080:h=670:color=red@0.25:t=fill',
@@ -98,7 +98,6 @@ const FORMATS = {
     H: 1080,
     VIEW: { width: 960, height: 540 },
     device: {},
-    boothZoom: { zoom: 1.3, cx: 300, cy: 250 },
     zap: { zoom: 1.6, cx: 480, cy: 250 },
     // the player stands at about (225, 410), ground at 450
     player: { cx: 330, cy: 380 },
@@ -126,7 +125,7 @@ const FORMATS = {
       lines: { title: 140, sub: 250, play: 350, url: 450, last: 540 },
       last: 'Your photo never leaves your device',
     },
-    sheet: 'fps=2,scale=320:180,tile=6x9',
+    sheet: 'fps=2,scale=320:180,tile=8x10',
     guides: ['drawbox=x=96:y=54:w=1728:h=972:color=lime@0.9:t=4'],
   },
 };
@@ -140,8 +139,9 @@ for (const d of [WORK, CHECK]) mkdirSync(d, { recursive: true });
 const BPM = 132;
 const BEAT = 60 / BPM;
 const FPS = 30;
-// 60 beats (~27 s): time to read every caption; a whole number of bars, so it loops.
-const BEATS = 60;
+// 80 beats (~36 s): time to read every caption. 20 bars = 5 rounds of the 4-bar song,
+// so it loops cleanly.
+const BEATS = 80;
 const { W, H, VIEW } = F;
 // Recording settings: no music (the music bed is added in the edit), no touch pad.
 const QUIET = { music: false, touchButtons: 'never' };
@@ -255,7 +255,8 @@ async function recordBooth() {
       const pick = async (label) => {
         await page.getByRole('button', { name: label, exact: true }).first().click();
         shots.push({ label, t: Date.now() });
-        await wait(800);
+        // longer than one shot (2.5 beats = 1.14 s) plus the redraw time
+        await wait(1500);
       };
       const tab = async (label) => {
         await page.getByRole('tab', { name: label, exact: true }).click();
@@ -511,16 +512,16 @@ async function renderFrames(page, captions) {
       for (let f = 0; f < hookN; f++) {
         let c;
         if (f < beat1) c = photoFrame(1 + 0.05 * (f / beat1));
-        else if (f < beat1 + 2) {
+        else if (f < beat1 + 3) {
           [c] = canvas();
           const o = c.getContext('2d');
           o.drawImage(photoFrame(1.05, 54), 0, 0);
           o.fillStyle = `rgba(255,255,255,${f === beat1 ? 1 : 0.6})`;
           o.fillRect(0, 0, W, H);
-        } else if (f < beat1 + 5) c = photoFrame(1.05, 54);
-        else if (f < beat1 + 8) c = photoFrame(1.05, 27);
+        } else if (f < beat1 + 8) c = photoFrame(1.05, 54);
+        else if (f < beat1 + 13) c = photoFrame(1.05, 27);
         else {
-          const t = f - (beat1 + 8);
+          const t = f - (beat1 + 13);
           const [low, lo] = lowScene(t * 6);
           const fr = runFrames[Math.floor(t / 2) % runFrames.length];
           // the character big in the scene (s low-res px per game px)
@@ -760,27 +761,28 @@ function musicBed(s) {
 
 // Beat plan: how long each shot is, in beats (one beat = 0.45 s). Shots and captions
 // both read this table, so they always line up. Without a milestone, RAM gets its beats.
+// Owner: 18 s and 27 s both felt too fast, so each moment gets ~1.1–1.8 s.
 const B = {
-  hook: 5,
-  look: 1.5,
+  hook: 6,
+  look: 2.5,
   zap: 3,
-  ram: 3,
+  ram: 4,
   rgbIn: 2,
-  rgbSlow: 2,
-  milestone: 3,
-  rush: 3,
+  rgbSlow: 3,
+  milestone: 4,
+  rush: 4,
   beamIn: 2,
-  beamSlow: 2,
-  jump: 3,
-  grab: 3,
-  caught: 2,
-  over: 4,
-  end: 11,
+  beamSlow: 3,
+  jump: 4,
+  grab: 4,
+  caught: 3,
+  over: 5,
+  end: 13,
 };
 const LOOKS = 8;
 const PLAN = {
   hookEnd: B.hook,
-  flashBeat: 2, // the selfie holds for 2 beats, then snaps
+  flashBeat: 3, // the selfie holds for 3 beats, then snaps
   boothBeats: LOOKS * B.look,
   endBeat: BEATS - B.end,
 };
@@ -897,10 +899,9 @@ function buildShots(booth, runA, m) {
   const add = (beats, make) => shots.push({ beats, make });
   // hook (drawn)
   add(PLAN.hookEnd, (i, f) => framesPiece(i, 'hook', f));
-  // booth montage: one look per 1.5 beats, every other one punched in on the preview
-  booth.shots.forEach((s, j) =>
-    add(B.look, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.12, f, j % 2 ? F.boothZoom : {})),
-  );
+  // booth montage: one look per shot, all with the same steady framing
+  // (owner: zooming in and out between looks felt random)
+  for (const s of booth.shots) add(B.look, (i, f) => cutPiece(i, booth.file, bt(s.t) + 0.15, f));
   // the zap
   add(B.zap, (i, f) => cutPiece(i, src, rt(m.zapAt) - 0.05, f, F.zap));
   // RAM pickups
@@ -972,8 +973,13 @@ let runTake;
 let musicLog;
 if (flags.has('--reuse')) {
   ({ boothLog, runLog, runTake, musicLog } = loadJson('logs'));
+  // --booth: record only the Photo Booth montage again (implies --redraw)
+  if (flags.has('--booth')) {
+    console.log('recording the Photo Booth montage…');
+    boothLog = await recordBooth();
+  }
   // --redraw: keep the recordings, draw the frames and record the music bed again
-  if (flags.has('--redraw')) {
+  if (flags.has('--redraw') || flags.has('--booth')) {
     console.log('drawing frames + recording the music bed…');
     musicLog = await recordMusicAndFrames(captionPlan(moments(runLog)));
     saveJson('logs', { boothLog, runLog, runTake, musicLog });
