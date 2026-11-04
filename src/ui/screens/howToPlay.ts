@@ -12,7 +12,7 @@ const CONTROLS: Record<Kind, { label: string; rows: [string, string][] }> = {
     rows: [
       ['Jump', 'Tap anywhere (or swipe up). Tap again in the air for a double jump.'],
       ['Slide', 'Swipe down and hold. In the air, this drops you fast.'],
-      ['Buttons', 'Prefer buttons? Settings → Touch buttons. Upright phones show them by default.'],
+      ['Buttons', 'Prefer buttons? Pause menu or Settings → Touch buttons.'],
       ['Pause', 'The II button, top right.'],
     ],
   },

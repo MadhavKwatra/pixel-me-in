@@ -10,8 +10,10 @@ export interface Settings {
   slowMode: boolean;
   vibration: boolean;
   tutorialDone: boolean;
-  /** On-screen Jump/Slide buttons: auto = upright phones only. */
+  /** On-screen Jump/Slide buttons: auto = upright phones only. Default: never (gestures). */
   touchButtons: 'auto' | 'always' | 'never';
+  /** The player picked a Touch buttons option themselves (else the default applies). */
+  touchButtonsChosen: boolean;
   portraitTipShown: boolean;
   /** Anonymous, cookieless play stats (src/analytics.ts). The player can turn them off. */
   stats: boolean;
@@ -45,21 +47,27 @@ function write(key: string, value: unknown) {
 }
 
 export function getSettings(): Settings {
-  return read<Settings>('pmi:settings', {
+  const s = read<Settings>('pmi:settings', {
     muted: false,
     music: true,
     reducedMotion: prefersReducedMotion(),
     slowMode: false,
     vibration: true,
     tutorialDone: false,
-    touchButtons: 'auto',
+    touchButtons: 'never',
+    touchButtonsChosen: false,
     portraitTipShown: false,
     stats: true,
   });
+  // Touch gestures are the default (owner, 2026-11-04). Saves from before this
+  // stored 'auto' without the player choosing it, so only a real choice counts.
+  if (!s.touchButtonsChosen) s.touchButtons = 'never';
+  return s;
 }
 
 export function setSettings(patch: Partial<Settings>): Settings {
   const next = { ...getSettings(), ...patch };
+  if (patch.touchButtons) next.touchButtonsChosen = true;
   write('pmi:settings', next);
   return next;
 }
