@@ -6,7 +6,7 @@ Newest first. What changed, why, and what broke.
 
 - Owner: the installed app should work fully offline, Photo Booth included. New `src/face/offline.ts` puts the exact MediaPipe files this device needs (SIMD or not, via `FilesetResolver`) into the service worker's `mediapipe` cache: automatically on `appinstalled`, when the installed app opens online without them (iPhone, earlier installs), and from Settings → Offline → "Download (17 MB)". Skipped when the phone's data saver is on.
 - Tested with a production build: after the install event, and after the Settings button, a brand-new photo works with the browser offline.
-- Owner also saw a white game screen (sound only) in the installed app on their phone. Not reproducible on PC (browser, offline, software and GPU WebGL all render). Needs the phone's console log (Wireless debugging + Chrome remote inspect, read-only) to find the cause.
+- Owner also saw a white game screen (sound only) in the installed app on their phone (offline). Not reproducible on PC. Cause: the installed app already runs full screen, and `enterGameMode` asked for element fullscreen again. Skipping it in the installed app (`isStandalone()`) fixed it – owner confirmed on the phone after the update.
 
 ## 2026-11-04 – Gestures by default; offline checked
 

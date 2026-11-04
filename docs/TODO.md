@@ -48,7 +48,7 @@
 - [ ] Lighthouse: performance, accessibility, best practices, SEO.
 - [x] Offline Photo Booth: face finder downloads on install (not with data saver on) or from Settings (`src/face/offline.ts`).
 - [ ] Warn before the ~17 MB face-finder download on mobile data (first photo in the browser).
-- [ ] Bug: white game screen (sound only) in the installed app on the owner's phone – get the phone console log.
+- [x] Bug: white game screen in the installed app (offline) – fixed by not requesting fullscreen again in the installed app; owner confirmed on the phone (2026-11-04).
 - [ ] Try many real selfies (dark room, glasses, beard, headwear, different skin tones) and tune the filter.
 
 ## Marketing
